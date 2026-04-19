@@ -4,6 +4,8 @@
 #include <libc.h>
 #include "ui/component.h"
 #include "ui/components/rectangle.h"
+#include "ui/components/group.h"
+#include "../common/datastructures/arrayList.h"
 
 
 Component *screenComponent = NULL;
@@ -33,20 +35,44 @@ void init() {
        init_pair(7, COLOR_BLACK, COLOR_WHITE);
     }
 
+    Group *g = newGroup();
+    g->constraint = GROUP_VBOX;
+    g->component.anchor.size.xType = VEC_RELATIVE;
+    g->component.anchor.size.yType = VEC_RELATIVE;
+    g->component.anchor.size.relX = 1;
+    g->component.anchor.size.relY = 1;
+    
     Rectangle *rect = newRectangle();
-    rect->color = 2;
+    rect->color = 1;
     rect->component.anchor.size.absX = 35;
-    rect->component.anchor.size.yType = VEC_RELATIVE;
-    rect->component.anchor.size.relY = 1;
-
+    // rect->component.anchor.size.yType = VEC_RELATIVE;
+    rect->component.anchor.size.absY = 10;
+    
     rect->component.anchor.position.xType = VEC_RELATIVE;
     rect->component.anchor.position.yType = VEC_RELATIVE;
     rect->component.anchor.position.relX = 0.5;
-    rect->component.anchor.position.relY = 0.5;
-
+    rect->component.anchor.position.relY = 0;
+    
     rect->component.anchor.origin.relX = 0.5;
-    rect->component.anchor.origin.relY = 0.5;
-    screenComponent = (Component*) rect;
+    rect->component.anchor.origin.relY = 0;
+    
+    Rectangle *rect2 = newRectangle();
+    rect2->component.anchor = rect->component.anchor;
+    rect2->component.anchor.size.absY = 20;
+    rect2->color = 2;
+    rect2->component.anchor.position.relX = 0.5;
+    rect2->component.anchor.position.relY = 0;
+    Rectangle *rect3 = newRectangle();
+    rect3->component.anchor = rect->component.anchor;
+    rect3->component.anchor.size.absY = 5;
+    rect3->color = 3;
+    rect3->component.anchor.position.relX = 0.5;
+    rect3->component.anchor.position.relY = 0;
+
+    screenComponent = (Component*) g;
+    alAppend(&g->components, rect);
+    alAppend(&g->components, rect2);
+    alAppend(&g->components, rect3);
 }
 
 void rerender() {

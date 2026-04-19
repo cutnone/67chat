@@ -6,7 +6,7 @@
 
 CC = gcc
 
-DIRS = . ui ui/scenes ui/components
+DIRS = . ui ui/scenes ui/components ../common/datastructures
 SRC = $(foreach dir,$(DIRS),$(wildcard $(dir)/*.c)) 
 # generates a list of all c files in the specified source directories
 

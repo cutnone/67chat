@@ -40,8 +40,8 @@ Anchor zeroAnchor = {
     .origin = {
         .xType = VEC_RELATIVE,
         .yType = VEC_RELATIVE,
-        .absX = 0,
-        .absY = 0,
+        .relX = 0,
+        .relY = 0,
     },
     .position = {
         .xType = VEC_ABSOLUTE,
@@ -75,11 +75,17 @@ IntVec2 *applyGenericVec2(IntVec2 *base, GenericVec2 *vec) {
     switch (vec->yType) {
         case VEC_ABSOLUTE:
             final->y = vec->absY;
+            FILE *log = fopen("debug.log", "a");
+            fprintf(log, "applyingB %d %d %d\n", base->y, vec->absY, final->y);
+            fclose(log);
             break;
         case VEC_RELATIVE:
             final->y = round(((float) base->y) * vec->relY);
             break;
     }
+    FILE *log = fopen("debug.log", "a");
+    fprintf(log, "applying %d %d %d %d\n", base->x, base->y, final->x, final->y);
+    fclose(log);
     return final;
 }
 
