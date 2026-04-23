@@ -1,7 +1,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <ncurses.h>
+#include <curses.h>
 
 typedef struct {
     int x;

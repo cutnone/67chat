@@ -3,7 +3,6 @@
 #include "../component.h"
 #include "../utils.h"
 #include "../../../common/datastructures/arrayList.h"
-#include <ncurses.h>
 #include <stdlib.h>
 #include <stdio.h>
 

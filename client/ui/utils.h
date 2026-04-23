@@ -34,7 +34,7 @@ typedef struct {
     GenericVec2 position;
     GenericVec2 size;
 } Anchor;
-Anchor zeroAnchor;
+extern Anchor zeroAnchor;
 
 typedef struct {
     IntVec2 topLeft;

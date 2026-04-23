@@ -2,7 +2,7 @@
 #include "../component.h"
 #include "../utils.h"
 #include "../../../common/datastructures/arrayList.h"
-#include <ncurses.h>
+#include <curses.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -30,7 +30,7 @@ typedef struct {
 void renderGroup(Component *component, BoundingBox *box) {
     Group *group = (Group*) component;
     for (int i = 0; i < group->components.length; i++) {
-        Component *innerComp = alGet(&group->components, i);
+        Component *innerComp = * (Component **)alGet(&group->components, i);
         BoundingBox *innerBox = generateChildBoundingBox(box, &innerComp->anchor);
         innerComp->render(innerComp, innerBox);
 
@@ -75,6 +75,7 @@ void renderGroup(Component *component, BoundingBox *box) {
             }
         }
     }
+    
 }
 
 Group *newGroup() {
@@ -83,9 +84,11 @@ Group *newGroup() {
     g->components.items = NULL;
     g->components.capacity = 0;
     g->component.anchor = zeroAnchor;
+    g->components.elementSize = sizeof(Component *);
     g->constraint = GROUP_FREE;
     g->xPad = 0;
     g->yPad = 0;
     g->component.render = renderGroup;
+    g->component.receiveInput = NULL;
     return g;
 }

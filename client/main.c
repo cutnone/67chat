@@ -1,4 +1,5 @@
 #include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include "interface.h"
 
@@ -13,7 +14,10 @@ void handleResize(int _);
 
 int main() {
     signal(SIGINT, finish); 
-    signal(SIGWINCH, resize);
+    #ifndef _WIN32
+        signal(SIGWINCH, resize);
+    #endif
+    
     init();
     
     rerender();
