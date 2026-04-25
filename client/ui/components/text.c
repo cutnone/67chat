@@ -53,7 +53,6 @@ typedef struct {
 // malicious usage, the downcasting in this function 
 // is safe.
 void renderText(Component *component, BoundingBox *bbox) {
-    printf("BEEP\n");
     TextComponent *text = (TextComponent*) component;
     ArrayList *lineLengths = newArrayListWithCapacity(sizeof(int), bbox->size.x/2);
     int x = 0;
@@ -62,7 +61,7 @@ void renderText(Component *component, BoundingBox *bbox) {
     for (int i = 0; i < text->instructions.length; i++) {
         TextRenderInstruction *instr = alGet(&text->instructions, i);
         switch (instr->type) {
-            case TR_WORD:
+            case TR_WORD: {
                 int len = strlen(instr->text);
                 if (len > bbox->size.x - x) {
                     if (mvinch(y, x - 1) == ' ') x--;
@@ -83,6 +82,7 @@ void renderText(Component *component, BoundingBox *bbox) {
                     }
                 }
                 break;
+            }
             case TR_SPACE:
                 // skip if it's the first space after a new line
                 if (!newLine) {

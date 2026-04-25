@@ -12,4 +12,5 @@ void sbAppend(StringBuilder *sb, char *src, unsigned int srcLen);
 void sbAppendC(StringBuilder *sb, char src);
 void sbResize(StringBuilder *sb, unsigned int newCapacity);
 void sbClear(StringBuilder *sb);
+void sbClip(StringBuilder *sb, unsigned int n);
 StringBuilder *newStringBuilder();

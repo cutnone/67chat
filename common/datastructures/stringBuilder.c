@@ -44,6 +44,15 @@ void sbAppendC(StringBuilder *sb, char src) {
     (sb->data)[sb->length+1] = '\0';
     sb->length++;
 }
+void sbClip(StringBuilder *sb, unsigned int n) {
+    if (sb->length < n) {
+        sb->data[0] = '\0';
+        sb->length = 0;
+    } else {
+        sb->data[sb->length-n] = '\0';
+        sb->length = sb->length-n;
+    }
+}
 
 StringBuilder *newStringBuilder() {
     StringBuilder *sb = malloc(sizeof(StringBuilder));

@@ -4,6 +4,10 @@
 #include "ui/component.h"
 #ifdef _WIN32
     #include <windows.h>
+#else
+    #include <unistd.h>
+    #include <sys/ioctl.h>
+    #include <termios.h>
 #endif
 #include "ui/components/rectangle.h"
 #include "ui/components/text.h"
@@ -117,7 +121,6 @@ void resize() {
     #else
         struct winsize ws;
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws);  // ask kernel for new size
-        printf("%d %d\n", ws.ws_row, ws.ws_col);
         resizeterm(ws.ws_row, ws.ws_col);
     #endif
     
