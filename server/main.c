@@ -35,9 +35,113 @@ Client clients[MAX_CLIENTS];
 Channel channels[MAX_CHANNELS];
 int channel_count = 0;
 
+// client sending utility stuff
+void send_to_client(int fd, char *msg){
+    send(fd, msg, strlen(msg), 0);
+}
+void broadcast(int sender_fd, int channel_index, char *msg){
+    for(int i=0; i<MAX_CLIENTS; i++){
+        if (clients[i].fd != 0 && clients[i].state == STATE_CHANNEL && clients[i].channel_index == channel_index/* && clients[i].fd != sender_fd*/){
+            send_to_client(clients[i].fd, msg);
+        }
+    }
+}
+void remove_client(int i){
+    close(clients[i].fd);
+    clients[i].fd = 0;
+    clients[i].state = STATE_PENDING;
+    clients[i].channel_index = -1;
+    strcpy(clients[i].username, "ghost");
+}
+// channel utilities
+int find_channel(char *name){
+    for(int i=0; i<channel_count; i++){
+        if(channels[i].active && strcmp(channels[i].name, name) == 0){
+            return 1;
+        }
+    }
+}
+void add_channel(char *name){
+    if(channel_count >= MAX_CHANNELS) return;
+    strcpy(channels[channel_count].name, name);
+    channels[channel_count].active = 1;
+    channel_count++:
+}
+//Commands
+void handle_name(int i, char *name){
+    if(clients[i].state == STATE_CHANNEL){
+        send_to_client(clients[i].fd, "[SERVER] Leave the channel before trying to change your name!\n");
+        return;
+    }
+    name[strcspn(name, "\r\n")] = 0; //trim the newlines
+    strncpy(clients[i].username, name, MAX_USERNAME - 1);
+    send_to_client(clients[i].fd, "[SERVER] Name Updated.\n")
+}
+void handle_join(int i, char *channel){
+    if (clients[i].state == STATE_CHANNEL){
+        send_to_client(clients[i].fd, "[SERVER] You're already in a channel!\n");
+        return;
+    }
+    channel[strcspn(channel, "\r\n")] = 0; //trim the newlines
+    int idx = find_channel(channel);
+    if (idx == -1){
+        send_to_client(clients[i].fd, "[SERVER] Channel not found!\n");
+        return;
+    }
+
+    clients[i].state = STATE_CHANNEL;
+    clients[i].channel_index = idx;
+
+    send_to_client(cleints[i].fd, "[SERVER] Joined channel successfully!\n");
+}
+void handle_leave(int i){
+    if (clients[i].state != STATE_CHANNEL){
+        send_to_client(clients[i].fd, "[SERVER] You can't leave a channel if you're not in a channel!\n");
+        return;
+    }
+    clients[i].state = STATE_PENDING;
+    clients[i].channel_index = -1;
+
+    send_to_client(clients[i].fd, "[SERVER] Left channel successfully!\n");
+}
+void handle_list(int i){
+    send_to_client(clients[i].fd, "[SERVER] Channels:\n");
+    for(int j = 0; j < channel_count; j++){
+        if (channels[i].active){
+            char buf[BUFFER_SIZE];
+            snprintf(buf, sizeof(buf), "- %s\n", channels[i].name);
+            send_to_client(channels[i].fd, buf);
+        }
+    }
+}
+void handle_chat(int i, char *msg){
+    if (clients[i].state != STATE_CHANNEL){
+        send_to_client(channels[i].fd, "[SERVER] In order to chat, you must join a channel first!\n");
+        return;
+    }
+    char out[BUFFER_SIZE];
+    snprintf(out, sizeof(out), "[%s]: %s", clients[i].username, msg);
+    broadcast(clients[i].fd, clients[i].channel_index, out);
+}
+
+
 int main(){
     int server_fd; //server socket file descriptor - id # of server socket; linux treats sockets as ints
     struct sockaddr_in server_addr; //make struct that stores where the server lives
+
+    //initialize clients
+    for(int i=0; i<MAX_CLIENTS; i++){
+        clients[i].fd = 0;
+        clients[i].state = STATE_PENDING;
+        clients[i].channel_index = -1;
+        strcpy(clients[i].username, "null");
+    }
+
+    //preset channels
+    add_channel("channel 1")
+    add_channel("channel 67")
+
+
     server_fd = socket(AF_INET/*for ipv4*/, SOCK_STREAM/*for TCP*/, 0/*default protocol*/); //create the actual socket
     if (server_fd < 0){
         perror("socket creation failed; exiting");
@@ -65,8 +169,73 @@ int main(){
     }
 
     printf("The server is successfully listening on port %d\n", PORT);
+
+    fd_set readfds; //set of scokets to monitor
     
-    while(1){sleep(1);} //keep alive loop; while 1 is temp
+    while(1){
+        FD_ZERO(&readfds); //clear set
+        FD_SET(server_fd, &readfds); //add server socket so we can detect new connections
+
+        int max_fd = server_fd; //we want to know the highest numbered id so we can use select
+
+        for(int i = 0; i<MAX_CLIENTS; i++){ //find highest numbered id while also getting a set of client sockets
+            int fd = clients[i].fd;
+            if (fd > 0) FD_SET(fd, &readfds); //add socket to watch set if client exists
+            if (fd > max_fd) max_fd = fd;
+        }
+
+        // HOLD:
+        select(max_fd + 1, &readfds, NULL, NULL, NULL);
+        // code pauses here until something happens socket-wise
+
+
+
+        // OK SOMETHING HAPPENED, NOW WHAT?:
+
+        // new connection
+        if (FD_ISSET(server_fd, &readfds)){ //check if server socket is "ready", which means a new client is connecting
+            int new_fd = accept(server_fd, NULL, NULL); //accept the connecttion (returns the socket for the client)
+            for(int i = 0; i < MAX_CLIENTS; i++){
+                if (clients[i].fd == 0){ //find empty slot in my array
+                    clients[i].fd = new_fd;
+                    send_to_client(new_fd, "[SERVER] Welcome! Commands are:\n/name <n>\n/join <c>\n/leave\n/list\n");
+                    break;
+                }
+            }
+        }
+
+        //handle existing clients
+        for(int i = 0; i < MAX_CLIENTS; i++){
+            int fd = clients[i].fd;
+            if (fd>0 && FD_ISSET(fd, &readfds)){ //check if client exists & has sent
+                char buf[BUFFER_SIZE];
+                int n = recv(fd, buf, sizeof(buf) - 1, 0); //read data; n is number of bytes
+                if (n <= 0){ // n=0 is a disconnect, n<0 is an error; so we handle them the same way
+                    remove_client(i);
+                    continue;
+                }
+
+                buf[n] = 0; //null-terminated, now we can treat it as text
+                
+                if (strncmp(buf, "/name ", 6) == 0){
+                    handle_name(i, buf + 6);
+                }
+                else if (strncmp(buf, "/join ", 6) == 0){
+                    handle_join(i, buf + 6);
+                }
+                else if (strncmp(buf, "/leave", 6) == 0){
+                    handle_leave(i);
+                }
+                else if (strncmp(buf, "/list", 5) == 0){
+                    handle_list(i);
+                }
+                else{
+                    handle_chat(i, buf);
+                }
+            }
+        }
+
+    } //keep alive loop;
 
     //ok techincally this can't be reached yet but ykyk just for good measure:
     close(server_fd);
