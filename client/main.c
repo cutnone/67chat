@@ -2,6 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "interface.h"
+#include "ui/scenes/connect.h"
+#include "ui/scenes/testScene.h"
+#include "ui/scenes/chooseUsername.h"
+#include "ui/scenes/chatScene.h"
+#include "ui/scenes/chooseChannel.h"
 
 static void finish(int sig);
 void handleResize(int _);
@@ -17,7 +22,12 @@ int main() {
     #ifndef _WIN32
         signal(SIGWINCH, resize);
     #endif
-    
+    initializeConnectScene();
+    initializeTestScene();
+    initializeChooseUsername();
+    initializeChooseChannel();
+    initializeChatScene();
+    screenComponent = (Component *) connectScene;
     init();
     
     rerender();

@@ -22,6 +22,7 @@ void init() {
     cbreak();
     nonl();
     noecho();
+    curs_set(0);
     if (has_colors()) {
         start_color();
         
@@ -31,60 +32,18 @@ void init() {
         * pair as for the foreground color, though of course that is not
         * necessary:
         */
-       init_pair(1, COLOR_BLACK, COLOR_RED);
-       init_pair(2, COLOR_BLACK, COLOR_GREEN);
-       init_pair(3, COLOR_BLACK, COLOR_YELLOW);
+       init_color(8, 200, 200, 200);
+       init_color(9, 800, 800, 800);
+       init_color(10, 100, 100, 100);
+       init_pair(1, COLOR_WHITE, 8);
+       init_pair(2, COLOR_BLACK, 9);
+       init_pair(3, COLOR_WHITE, 10);
        init_pair(4, COLOR_BLACK, COLOR_BLUE);
        init_pair(5, COLOR_BLACK, COLOR_CYAN);
        init_pair(6, COLOR_BLACK, COLOR_MAGENTA);
        init_pair(7, COLOR_BLACK, COLOR_WHITE);
     }
     
-
-    Group *g = newGroup();
-    g->constraint = GROUP_VBOX;
-    g->component.anchor.size.xType = VEC_RELATIVE;
-    g->component.anchor.size.yType = VEC_RELATIVE;
-    g->component.anchor.size.relX = 1;
-    g->component.anchor.size.relY = 1;
-    g->yPad = 1;
-    RectangleComponent *rect = newRectangle();
-    rect->color = 1;
-    rect->component.anchor.size.absX = 35;
-    // rect->component.anchor.size.yType = VEC_RELATIVE;
-    rect->component.anchor.size.absY = 10;
-    
-    rect->component.anchor.position.xType = VEC_RELATIVE;
-    rect->component.anchor.position.yType = VEC_RELATIVE;
-    rect->component.anchor.position.relX = 0.5;
-    rect->component.anchor.position.relY = 0;
-    
-    rect->component.anchor.origin.relX = 0.5;
-    rect->component.anchor.origin.relY = 0;
-    TextComponent *rect2 = newTextComponent();
-    ArrayList *instructions = stringToInstructions("Hey guys, did you know that in terms of male human and female Pokemon breeding, Vaporeon is the most compatible Pokemon for humans? Not only are they in the field egg group, which is mostly comprised of mammals, Vaporeon are an average of 3\"03' tall and 63.9 pounds, this means they're large enough to be able handle human dicks, and with their impressive Base Stats for HP and access to Acid Armor, you can be rough with one. Due to their mostly water based biology, there's no doubt in my mind that an aroused Vaporeon would be incredibly wet, so wet that you could easily have sex with one for hours without getting sore. They can also learn the moves Attract, Baby-Doll Eyes, Captivate, Charm, and Tail Whip, along with not having fur to hide nipples, so it'd be incredibly easy for one to get you in the mood. With their abilities Water Absorb and Hydration, they can easily recover from fatigue with enough water. No other Pokemon comes close to this level of compatibility. Also, fun fact, if you pull out enough, you can make your Vaporeon turn white. Vaporeon is literally built for human dick. Ungodly defense stat+high HP pool+Acid Armor means it can take cock all day, all shapes and sizes and still come for more");
-    rect2->direction = TRD_TOP_MIDDLE;
-    rect2->instructions = *instructions;
-    rect2->component.anchor = rect->component.anchor;
-    rect2->component.anchor.size.yType = VEC_RELATIVE;
-    rect2->component.anchor.size.relY = 1.0;
-    rect2->component.anchor.size.xType = VEC_RELATIVE;
-    rect2->component.anchor.size.relX= 0.5;
-    rect2->component.anchor.position.relX = 0.5;
-    rect2->component.anchor.position.relY = 0;
-    
-    RectangleComponent *rect3 = newRectangle();
-    alAppend(&g->components, &rect);
-    rect3->component.anchor = rect->component.anchor;
-    rect3->component.anchor.size.absY = 5;
-    rect3->color = 3;
-    rect3->component.anchor.origin.relY = 1;
-    rect3->component.anchor.position.relX = 0.5;
-    rect3->component.anchor.position.relY = 1;
-    
-    screenComponent = (Component*) g;
-    alAppend(&g->components, &rect3);
-    alAppend(&g->components, &rect2);
 }
 
 void rerender() {
@@ -105,7 +64,6 @@ void rerender() {
         BoundingBox *applied = generateChildBoundingBox(&screenBox, &screenComponent->anchor);
         screenComponent->render(screenComponent, applied);
     }
-    move(0, 0);
     refresh();
 }
 

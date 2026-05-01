@@ -10,21 +10,30 @@ typedef enum {
     UNSET_OK,
     UNSET_TOO_SHORT,
     UNSET_TOO_LONG,
-    UNSET_TOO_INVALID,
+    UNSET_INVALID,
     UNSET_TAKEN,
     UNSET_FAILED,
 } UsernameSetResponseType;
 
-const int MAX_USERNAME_LENGTH;
-const int MIN_USERNAME_LENGTH;
+typedef enum {
+    CJOIN_OK,
+    CJOIN_TOO_SHORT,
+    CJOIN_TOO_LONG,
+    CJOIN_INVALID,
+    CJOIN_FAILED,
+} ChannelJoinResponseType;
+
+extern const int MAX_USERNAME_LENGTH;
+extern const int MIN_USERNAME_LENGTH;
 bool characterAllowedInUsername(char testChar);
 
-int connId;
-char *username;
-char *activeChannel;
+extern int connId;
+extern char *username;
+extern char *activeChannel;
 
 int getConnId();
 char *getUsername();
 char *getActiveChannel();
-ConnectionStatusType connect();
+ConnectionStatusType connectToServer();
 UsernameSetResponseType trySetUsername(char *newUname);
+ChannelJoinResponseType tryJoinChannel(char *channelName);

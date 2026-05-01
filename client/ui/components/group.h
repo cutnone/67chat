@@ -2,6 +2,7 @@
 #pragma once
 #include "../component.h"
 #include "../utils.h"
+#include "rectangle.h"
 #include "../../../common/datastructures/arrayList.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -18,7 +19,14 @@ typedef struct {
     GroupConstraint constraint;
     int xPad;
     int yPad;
-    ArrayList components;
+    int topMargin;
+    int bottomMargin;
+    int leftMargin;
+    int rightMargin;
+    ArrayList *components;
+    RectangleComponent *background;
 } Group;
+
+void groupAddBackground(Group *group, unsigned char color);
 
 Group *newGroup();

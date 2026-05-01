@@ -2,6 +2,7 @@
 #include "../component.h"
 #include "../utils.h"
 #include "../../../common/datastructures/arrayList.h"
+#include <curses.h>
 
 typedef enum {
     // using a bitfield here.
@@ -36,9 +37,10 @@ typedef struct {
 typedef struct {
     Component component;
     TextRenderDirection direction;
-    ArrayList instructions;
+    ArrayList *instructions;
 } TextComponent;
 
 TextComponent *newTextComponent();
 void clearText(TextComponent *c);
 ArrayList *stringToInstructions(char *string);
+ArrayList *rawStringToInstructions(char *string);

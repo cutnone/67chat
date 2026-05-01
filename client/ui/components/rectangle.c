@@ -7,7 +7,7 @@
 // got this "inheritance" pattern from Claude
 typedef struct {
     Component component;
-    char color;
+    unsigned char color;
 } RectangleComponent;
 
 // this function will not be exported in the header,
@@ -18,9 +18,9 @@ typedef struct {
 // is safe.
 void renderRect(Component *component, BoundingBox *bbox) {
     RectangleComponent *rect = (RectangleComponent*) component;
-    char txt[20];
-    sprintf(txt, "p %d %d", bbox->topLeft.x, bbox->topLeft.y);
-    mvaddstr(0, 0, txt);
+    // char txt[20];
+    // sprintf(txt, "p %d %d", bbox->topLeft.x, bbox->topLeft.y);
+    // mvaddstr(0, 0, txt);
     
     attrset(COLOR_PAIR(rect->color));
     for (int x = 0; x < bbox->size.x; x++) {

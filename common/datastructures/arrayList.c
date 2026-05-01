@@ -22,6 +22,11 @@ void alResizeList(ArrayList *list, unsigned int newCapacity) {
     list->items = realloc(list->items, list->elementSize*newCapacity);
     list->capacity = newCapacity;
 }
+void alFree(ArrayList *list) {
+    alResizeList(list, 0);
+    free(list->items);
+    free(list);
+};
 
 void *alGet(ArrayList *list, unsigned int index) {
     // out of bounds
@@ -39,6 +44,21 @@ void alAppend(ArrayList *list, void *item) {
     }
     memcpy(list->items + list->length++ * list->elementSize, item, list->elementSize);
 }
+void alConcat(ArrayList *list, ArrayList *items) {
+    if (list->elementSize != items->elementSize) return; // invalid
+    if (list->length+items->length > list->capacity) {
+        // resize first
+        alResizeList(list, list->capacity*2 + items->length);
+        
+    }
+    memcpy(list->items + list->length * list->elementSize, items->items, list->elementSize*items->length);
+    list->length += items->length;
+}
+void alConcatAndFree(ArrayList *list, ArrayList *items) {
+    alConcat(list, items);
+    alFree(items);
+}
+
 
 void *alRemove(ArrayList *list, unsigned int index) {
     // out of bounds
@@ -52,7 +72,6 @@ void *alRemove(ArrayList *list, unsigned int index) {
     // shift everything back
     for (int i = index+1; i < list->length; i++) {
         memcpy(list->items + (i-1) * list->elementSize, list->items + i * list->elementSize, list->elementSize);
-        list->items[i-1] = list->items[i];
     }
     list->length--;
 

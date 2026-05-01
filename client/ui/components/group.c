@@ -1,6 +1,7 @@
 
 #include "../component.h"
 #include "../utils.h"
+#include "rectangle.h"
 #include "../../../common/datastructures/arrayList.h"
 #include <curses.h>
 #include <stdlib.h>
@@ -24,13 +25,31 @@ typedef struct {
     GroupConstraint constraint;
     int xPad;
     int yPad;
-    ArrayList components;
+    int topMargin;
+    int bottomMargin;
+    int leftMargin;
+    int rightMargin;
+    ArrayList *components;
+    RectangleComponent *background;
 } Group;
 
 void renderGroup(Component *component, BoundingBox *box) {
     Group *group = (Group*) component;
-    for (int i = 0; i < group->components.length; i++) {
-        Component *innerComp = * (Component **)alGet(&group->components, i);
+
+    
+    
+    if (group->background != NULL) {
+        group->background->component.render((Component *) group->background, box);
+    }
+    
+    // apply margin
+    box->topLeft.y += group->topMargin;
+    box->size.y -= group->topMargin + group->bottomMargin;
+    box->topLeft.x += group->leftMargin;
+    box->size.x -= group->leftMargin + group->rightMargin;
+    
+    for (int i = 0; i < group->components->length; i++) {
+        Component *innerComp = * (Component **)alGet(group->components, i);
         BoundingBox *innerBox = generateChildBoundingBox(box, &innerComp->anchor);
         innerComp->render(innerComp, innerBox);
 
@@ -78,17 +97,36 @@ void renderGroup(Component *component, BoundingBox *box) {
     
 }
 
+void groupReceiveInput(Component * component, int key) {
+    Group *group = (Group*) component;
+    for (int i = 0; i < group->components->length; i++) {
+        Component *innerComp = * (Component **)alGet(group->components, i);
+        if (innerComp->receiveInput != NULL) {
+            innerComp->receiveInput(innerComp, key);
+        }
+    }
+}
+
+void groupAddBackground(Group *group, unsigned char color) {
+    if (group->background == NULL) {
+        group->background = newRectangle();
+    }
+    group->background->color = color;
+}
+
 Group *newGroup() {
     Group *g = malloc(sizeof(Group));
-    g->components.length = 0;
-    g->components.items = NULL;
-    g->components.capacity = 0;
+    g->components = newArrayList(sizeof(Component *));
     g->component.anchor = zeroAnchor;
-    g->components.elementSize = sizeof(Component *);
     g->constraint = GROUP_FREE;
+    g->background = NULL;
     g->xPad = 0;
     g->yPad = 0;
+    g->topMargin = 0;
+    g->bottomMargin = 0;
+    g->leftMargin = 0;
+    g->rightMargin = 0;
     g->component.render = renderGroup;
-    g->component.receiveInput = NULL;
+    g->component.receiveInput = groupReceiveInput;
     return g;
 }

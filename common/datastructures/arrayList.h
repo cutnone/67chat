@@ -11,9 +11,12 @@ typedef struct {
 } ArrayList;
 
 void alResizeList(ArrayList *list, unsigned int newCapacity);
+void alFree(ArrayList *list);
 
 void *alGet(ArrayList *list, unsigned int index);
 void alAppend(ArrayList *list, void *item);
+void alConcat(ArrayList *list, ArrayList *items);
+void alConcatAndFree(ArrayList *list, ArrayList *items);
 
 void *alRemove(ArrayList *list, unsigned int index);
 

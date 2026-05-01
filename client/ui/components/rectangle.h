@@ -5,7 +5,7 @@
 // got this "inheritance" pattern from Claude
 typedef struct {
     Component component;
-    char color;
+    unsigned char color;
 } RectangleComponent;
 
 RectangleComponent *newRectangle();

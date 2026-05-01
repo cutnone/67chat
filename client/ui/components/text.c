@@ -42,7 +42,7 @@ typedef struct {
 typedef struct {
     Component component;
     TextRenderDirection direction;
-    ArrayList instructions;
+    ArrayList *instructions;
 } TextComponent;
 
 
@@ -53,15 +53,17 @@ typedef struct {
 // malicious usage, the downcasting in this function 
 // is safe.
 void renderText(Component *component, BoundingBox *bbox) {
+    
     TextComponent *text = (TextComponent*) component;
     ArrayList *lineLengths = newArrayListWithCapacity(sizeof(int), bbox->size.x/2);
     int x = 0;
     int y = 0;
     int newLine = 0; // 0 means off, 1 means on, 2 means turn me back off.
-    for (int i = 0; i < text->instructions.length; i++) {
-        TextRenderInstruction *instr = alGet(&text->instructions, i);
+    for (int i = 0; i < text->instructions->length; i++) {
+        TextRenderInstruction *instr = alGet(text->instructions, i);
+        // printf("BEEP %d\n", instr->type);
         switch (instr->type) {
-            case TR_WORD: {
+            case TR_WORD:
                 int len = strlen(instr->text);
                 if (len > bbox->size.x - x) {
                     if (mvinch(y, x - 1) == ' ') x--;
@@ -82,11 +84,10 @@ void renderText(Component *component, BoundingBox *bbox) {
                     }
                 }
                 break;
-            }
             case TR_SPACE:
                 // skip if it's the first space after a new line
                 if (!newLine) {
-                    // mvaddch(y + bbox->topLeft.y, x + bbox->topLeft.x, ' ');
+                    mvaddch(y + bbox->topLeft.y, x + bbox->topLeft.x, ' ');
                     x++;
                     if (x == bbox->size.x) {
                         x--;
@@ -170,10 +171,7 @@ void renderText(Component *component, BoundingBox *bbox) {
 
 TextComponent *newTextComponent() {
     TextComponent *text = malloc(sizeof(TextComponent));
-    text->instructions.capacity = 0;
-    text->instructions.length = 0;
-    text->instructions.elementSize = sizeof(TextRenderInstruction);
-    text->instructions.items = NULL;
+    text->instructions = newArrayList(sizeof(TextRenderInstruction));
     text->direction = TRD_TOP_LEFT;
     text->component.anchor = zeroAnchor;
     text->component.render = renderText;
@@ -181,7 +179,7 @@ TextComponent *newTextComponent() {
 }
 
 void clearText(TextComponent *c) {
-    alClear(&c->instructions);
+    alClear(c->instructions);
 }
 
 ArrayList *stringToInstructions(char *string) {
@@ -227,7 +225,6 @@ ArrayList *stringToInstructions(char *string) {
                 }
                 break;
             }
-            // these formatting chars should fallthrough
             case '*':
                 isFormat = true;
                 tempFormat = A_ITALIC;
@@ -265,6 +262,53 @@ ArrayList *stringToInstructions(char *string) {
             }
         }
         isFormat = false;
+    }
+    if (wordBuffer->length > 0) {
+        TextRenderInstruction instr;
+        instr.type = TR_WORD;
+        instr.text = strdup(wordBuffer->data);
+        sbClear(wordBuffer);
+        alAppend(list, &instr);
+    }
+    free(wordBuffer);
+    return list;
+}
+
+ArrayList *rawStringToInstructions(char *string) {
+    ArrayList *list = newArrayList(sizeof(TextRenderInstruction));
+    StringBuilder *wordBuffer = newStringBuilder();
+    chtype currentFormat = A_NORMAL;
+    for (int i = 0; i < strlen(string); i++) {
+        char c = string[i];
+        if ((c == '\n' || c == ' ') && wordBuffer->length > 0) {
+            // flush buffer
+            
+            TextRenderInstruction instr;
+            instr.type = TR_WORD;
+            instr.text = strdup(wordBuffer->data);
+            sbClear(wordBuffer);
+            alAppend(list, &instr);
+            
+        }
+        chtype tempFormat = 0;
+        switch (c) {
+            case '\n': { // adding scopes here allows me to declare variables closer to their usages.
+                TextRenderInstruction instr;
+                instr.type = TR_RETURN;
+                alAppend(list, &instr);
+                break;
+            }
+            case ' ': {
+                TextRenderInstruction instr;
+                instr.type = TR_SPACE;
+                alAppend(list, &instr);
+                break;
+            }
+            default:
+                sbAppendC(wordBuffer, c);
+                break;
+                
+        }
     }
     if (wordBuffer->length > 0) {
         TextRenderInstruction instr;

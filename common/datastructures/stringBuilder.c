@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-
+#include <stdio.h>
 typedef struct {
     unsigned int capacity;
     unsigned int length;
@@ -53,6 +53,34 @@ void sbClip(StringBuilder *sb, unsigned int n) {
         sb->length = sb->length-n;
     }
 }
+void sbRemove(StringBuilder *sb, unsigned int index) {
+    // out of bounds
+    if (index < 0 || index >= sb->length) return;
+
+    // shift everything back ("<=" to include '\0')
+    for (int i = index+1; i <= sb->length; i++) {
+        sb->data[i-1] = sb->data[i];
+    }
+    sb->length--;
+}
+void sbInsertC(StringBuilder *sb, unsigned int index, char src) {
+    // out of bounds
+    if (index < 0 || index > sb->length) return;
+
+    // resize check
+    if (sb->length + 1 > sb->capacity) {
+        // 1.5x the cap, +1 in case it rounds to the same amount
+        sbResize(sb, sb->capacity + sb->capacity/2 + 1);
+    }
+    // return;
+    // shift everything forward
+    for (int i = sb->length; i >= index && i <= sb->length; i--) {
+        (sb->data)[i+1] = (sb->data)[i];
+    }
+    sb->length++;
+    (sb->data)[index] = src;
+}
+
 
 StringBuilder *newStringBuilder() {
     StringBuilder *sb = malloc(sizeof(StringBuilder));
