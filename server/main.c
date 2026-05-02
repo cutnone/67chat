@@ -65,7 +65,7 @@ void add_channel(char *name){
     if(channel_count >= MAX_CHANNELS) return;
     strcpy(channels[channel_count].name, name);
     channels[channel_count].active = 1;
-    channel_count++:
+    channel_count++;
 }
 //Commands
 void handle_name(int i, char *name){
@@ -75,7 +75,7 @@ void handle_name(int i, char *name){
     }
     name[strcspn(name, "\r\n")] = 0; //trim the newlines
     strncpy(clients[i].username, name, MAX_USERNAME - 1);
-    send_to_client(clients[i].fd, "[SERVER] Name Updated.\n")
+    send_to_client(clients[i].fd, "[SERVER] Name Updated.\n");
 }
 void handle_join(int i, char *channel){
     if (clients[i].state == STATE_CHANNEL){
@@ -92,7 +92,7 @@ void handle_join(int i, char *channel){
     clients[i].state = STATE_CHANNEL;
     clients[i].channel_index = idx;
 
-    send_to_client(cleints[i].fd, "[SERVER] Joined channel successfully!\n");
+    send_to_client(clients[i].fd, "[SERVER] Joined channel successfully!\n");
 }
 void handle_leave(int i){
     if (clients[i].state != STATE_CHANNEL){
@@ -110,13 +110,13 @@ void handle_list(int i){
         if (channels[i].active){
             char buf[BUFFER_SIZE];
             snprintf(buf, sizeof(buf), "- %s\n", channels[i].name);
-            send_to_client(channels[i].fd, buf);
+            send_to_client(clients[i].fd, buf);
         }
     }
 }
 void handle_chat(int i, char *msg){
     if (clients[i].state != STATE_CHANNEL){
-        send_to_client(channels[i].fd, "[SERVER] In order to chat, you must join a channel first!\n");
+        send_to_client(clients[i].fd, "[SERVER] In order to chat, you must join a channel first!\n");
         return;
     }
     char out[BUFFER_SIZE];
@@ -138,8 +138,8 @@ int main(){
     }
 
     //preset channels
-    add_channel("channel 1")
-    add_channel("channel 67")
+    add_channel("channel 1");
+    add_channel("channel 67");
 
 
     server_fd = socket(AF_INET/*for ipv4*/, SOCK_STREAM/*for TCP*/, 0/*default protocol*/); //create the actual socket
