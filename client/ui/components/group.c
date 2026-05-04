@@ -35,8 +35,6 @@ typedef struct {
 
 void renderGroup(Component *component, BoundingBox *box) {
     Group *group = (Group*) component;
-
-    
     
     if (group->background != NULL) {
         group->background->component.render((Component *) group->background, box);
@@ -50,9 +48,11 @@ void renderGroup(Component *component, BoundingBox *box) {
     
     for (int i = 0; i < group->components->length; i++) {
         Component *innerComp = * (Component **)alGet(group->components, i);
+        printf("things %p %p\n", box, &innerComp->anchor);
         BoundingBox *innerBox = generateChildBoundingBox(box, &innerComp->anchor);
+        return;
         innerComp->render(innerComp, innerBox);
-
+        
         // bitmask trick i learned but never had a reason to use
         // until now. is nonzero when horizontal constraining is needed.
         if (group->constraint & GROUP_HBOX) {

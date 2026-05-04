@@ -64,6 +64,10 @@ typedef struct {
 
 IntVec2 *applyGenericVec2(IntVec2 *base, GenericVec2 *vec) {
     IntVec2 *final = malloc(sizeof(IntVec2));
+    printf("a\n");
+    printf("n %p\n", vec);
+    printf("g %d\n", vec->xType);
+    printf("b\n");
     switch (vec->xType) {
         case VEC_ABSOLUTE:
             final->x = vec->absX;
@@ -91,6 +95,7 @@ IntVec2 *applyGenericVec2(IntVec2 *base, GenericVec2 *vec) {
 
 BoundingBox *generateChildBoundingBox(BoundingBox *outerBox, Anchor *anchor) {
     BoundingBox *finalBox = malloc(sizeof(BoundingBox));
+    
     finalBox->size = *applyGenericVec2(&outerBox->size, &anchor->size);
     IntVec2 computedOrigin = *applyGenericVec2(&finalBox->size, &anchor->origin);
     IntVec2 computedPosition = *applyGenericVec2(&outerBox->size, &anchor->position);
@@ -104,7 +109,7 @@ BoundingBox *generateChildBoundingBox(BoundingBox *outerBox, Anchor *anchor) {
     computedPosition.y += outerBox->topLeft.y;
     
     finalBox->topLeft = computedPosition;
-
+    
     return finalBox;
 }
 

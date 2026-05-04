@@ -113,13 +113,9 @@ ChannelJoinResponseType tryJoinChannel(char *channelName) {
             return CJOIN_INVALID;
         }
     }
-    if (len > MAX_USERNAME_LENGTH) {
-        return UNSET_TOO_LONG;
-    }
-
     sleepMs(250); // simulate server connection
     free(activeChannel);
     activeChannel = strdup(channelName);
-    return UNSET_OK;
+    return CJOIN_OK;
 
 }

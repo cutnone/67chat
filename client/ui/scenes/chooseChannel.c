@@ -29,7 +29,7 @@ void chooseChannelReceiveInput(Component *component, int c) {
         case '\n':
             ccStatusText->instructions = stringToInstructions("Joining Channel...");
             rerender();
-            UsernameSetResponseType status = tryJoinChannel(ccTextInput->value->data);
+            ChannelJoinResponseType status = tryJoinChannel(ccTextInput->value->data);
             switch (status) {
                 case CJOIN_TOO_LONG:
                     ccStatusText->instructions = stringToInstructions("Channel name too long.");

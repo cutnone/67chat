@@ -12,6 +12,7 @@
 #include "ui/components/rectangle.h"
 #include "ui/components/text.h"
 #include "ui/components/group.h"
+#include "ui/scenes/resizeScene.h"
 #include "../common/datastructures/arrayList.h"
 
 Component *screenComponent = NULL;
@@ -49,6 +50,11 @@ void init() {
 void rerender() {
     erase();
     int maxY = getmaxy(curscr), maxX = getmaxx(curscr);
+    
+    Component *renderThis = screenComponent;
+    if (maxX < MIN_WIDTH || maxY < MIN_HEIGHT) {
+        renderThis = (Component*) resizeScene;
+    }
     BoundingBox screenBox = {
         .topLeft = {
             .x = 0,
@@ -60,9 +66,9 @@ void rerender() {
         },
         
     };
-    if (screenComponent != NULL) {
-        BoundingBox *applied = generateChildBoundingBox(&screenBox, &screenComponent->anchor);
-        screenComponent->render(screenComponent, applied);
+    if (renderThis != NULL) {
+        BoundingBox *applied = generateChildBoundingBox(&screenBox, &renderThis->anchor);
+        renderThis->render(renderThis, applied);
     }
     refresh();
 }

@@ -7,6 +7,7 @@
 #include "ui/scenes/chooseUsername.h"
 #include "ui/scenes/chatScene.h"
 #include "ui/scenes/chooseChannel.h"
+#include "ui/scenes/resizeScene.h"
 
 static void finish(int sig);
 void handleResize(int _);
@@ -27,6 +28,7 @@ int main() {
     initializeChooseUsername();
     initializeChooseChannel();
     initializeChatScene();
+    initializeResizeScene();
     screenComponent = (Component *) connectScene;
     init();
     
