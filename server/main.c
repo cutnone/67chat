@@ -19,6 +19,19 @@ typedef enum {
     STATE_CHANNEL
 } ClientState;
 
+typedef enum {
+    PKT_SET_NAME = 1,
+    PKT_JOIN,
+    PKT_LEAVE,
+    PKT_CHAT,
+    PKT_LIST
+} PacketType;
+
+typedef struct PacketHeader { //for packets
+    uint8_t type;      // which packet
+    uint16_t length;   // payload size
+} PacketHeader;
+
 typedef struct Channel { //boom i can now use it either way
     char name[MAX_CHANNEL_NAME];
     int active;
@@ -57,9 +70,10 @@ void remove_client(int i){
 int find_channel(char *name){
     for(int i=0; i<channel_count; i++){
         if(channels[i].active && strcmp(channels[i].name, name) == 0){
-            return 1;
+            return i;
         }
     }
+    return -1;
 }
 void add_channel(char *name){
     if(channel_count >= MAX_CHANNELS) return;
@@ -107,9 +121,9 @@ void handle_leave(int i){
 void handle_list(int i){
     send_to_client(clients[i].fd, "[SERVER] Channels:\n");
     for(int j = 0; j < channel_count; j++){
-        if (channels[i].active){
+        if (channels[j].active){
             char buf[BUFFER_SIZE];
-            snprintf(buf, sizeof(buf), "- %s\n", channels[i].name);
+            snprintf(buf, sizeof(buf), "- %s\n", channels[j].name);
             send_to_client(clients[i].fd, buf);
         }
     }
@@ -208,29 +222,45 @@ int main(){
         for(int i = 0; i < MAX_CLIENTS; i++){
             int fd = clients[i].fd;
             if (fd>0 && FD_ISSET(fd, &readfds)){ //check if client exists & has sent
-                char buf[BUFFER_SIZE];
-                int n = recv(fd, buf, sizeof(buf) - 1, 0); //read data; n is number of bytes
-                if (n <= 0){ // n=0 is a disconnect, n<0 is an error; so we handle them the same way
+                PacketHeader header;
+                int n = recv(fd, &header, sizeof(header), 0);
+
+                if (n <= 0){
                     remove_client(i);
                     continue;
                 }
 
-                buf[n] = 0; //null-terminated, now we can treat it as text
-                
-                if (strncmp(buf, "/name ", 6) == 0){
-                    handle_name(i, buf + 6);
+                // read payload if it exists
+                char payload[BUFFER_SIZE] = {0}; //make sure it's like ended properly to read
+                if (header.length > 0){
+                    recv(fd, payload, header.length, 0);
                 }
-                else if (strncmp(buf, "/join ", 6) == 0){
-                    handle_join(i, buf + 6);
-                }
-                else if (strncmp(buf, "/leave", 6) == 0){
-                    handle_leave(i);
-                }
-                else if (strncmp(buf, "/list", 5) == 0){
-                    handle_list(i);
-                }
-                else{
-                    handle_chat(i, buf);
+
+                switch(header.type){
+                    case PKT_SET_NAME: {
+                        handle_name(i, payload);
+                        break;
+                    }
+                    case PKT_JOIN: {
+                        handle_join(i, payload);
+                        break;
+                    }
+                    case PKT_LEAVE: {
+                        handle_leave(i);
+                        break;
+                    }
+                    case PKT_CHAT: {
+                        handle_chat(i, payload);
+                        break;
+                    }
+                    case PKT_LIST: {
+                        handle_list(i);
+                        break;
+                    }
+                    default: {
+                        send_to_client(fd, "[SERVER] The server received an unknown packet type; this is a code problem, not your fault\n");
+                        break;
+                    }
                 }
             }
         }
