@@ -66,7 +66,7 @@ void *alRemove(ArrayList *list, unsigned int index) {
     
     void *item = NULL;
     if (list->freeOnRemove) {
-        void *item = ((void **) list->items)[index];
+        item = ((void **) list->items)[index];
     }
 
     // shift everything back
@@ -84,7 +84,7 @@ void *alReplace(ArrayList *list, unsigned int index, void *newItem) {
 
     void *oldItem = NULL;
     if (list->freeOnRemove) {
-        void *oldItem = ((void **) list->items)[index];
+        oldItem = ((void **) list->items)[index];
     }
 
     memcpy(list->items + index * list->elementSize, newItem, list->elementSize);

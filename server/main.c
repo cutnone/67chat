@@ -6,19 +6,17 @@
 #include <sys/select.h>
 #include <string.h>
 
+#include "../common/datastructures/arrayList.h"
+
 //server is <500 lines so idk if it's even worth separating; it's actually quite nice and clean like this unlike the complicated client (oh god)
 
 // constants: (must match client)
 #define PORT 6767
-#define MAX_CLIENTS 67
 #define BUFFER_SIZE 1024
 #define MAX_USERNAME 16
 #define MAX_CHANNEL_NAME 16
-#define MAX_CHANNELS 67
 #define MIN_USERNAME 3
 #define MIN_CHANNEL_NAME 3
-
-
 
 // !!! MUST MATCH comms.c !!!
 typedef enum {
@@ -52,7 +50,7 @@ int character_allowed(char c) {
 
 typedef struct Channel { //boom i can now use it either way
     char name[MAX_CHANNEL_NAME];
-    int active;
+    int is_default;
 } Channel;
 
 typedef struct Client {
@@ -62,9 +60,8 @@ typedef struct Client {
     int channel_index; // gonna just do a "-1 if none" type situation
 } Client;
 
-Client clients[MAX_CLIENTS]; 
-Channel channels[MAX_CHANNELS];
-int channel_count = 0;
+ArrayList *clients;
+ArrayList *channels;
 
 // client sending utility stuff
 void send_to_client(int fd, char *msg){
@@ -72,33 +69,74 @@ void send_to_client(int fd, char *msg){
     send(fd, msg, strlen(msg)+1 /* include null byte */, 0);
 }
 void broadcast(int sender_fd, int channel_index, char *msg){
-    for(int i=0; i<MAX_CLIENTS; i++){
-        if (clients[i].fd != 0 && clients[i].state == STATE_CHANNEL && clients[i].channel_index == channel_index/* && clients[i].fd != sender_fd*/){
-            send_to_client(clients[i].fd, msg);
+    for (int i = 0; i < clients->length; i++){
+        Client *c = (Client *)alGet(clients, i);
+        if (!c) continue;
+        if (c->state == STATE_CHANNEL && c->channel_index == channel_index){
+            send_to_client(c->fd, msg);
         }
     }
 }
 void remove_client(int i){
-    close(clients[i].fd);
-    clients[i].fd = 0;
-    clients[i].state = STATE_PENDING;
-    clients[i].channel_index = -1;
-    strcpy(clients[i].username, "ghost");
+    Client *c = (Client *)alGet(clients, i);
+    if (!c) return;
+    int old_channel = c->channel_index;
+    close(c->fd);
+    alRemove(clients, i); //shifts everything left
+    if (old_channel != -1){
+        try_delete_channel(old_channel);
+    }
 }
 // channel utilities
 int find_channel(char *name){
-    for(int i=0; i<channel_count; i++){
-        if(channels[i].active && strcmp(channels[i].name, name) == 0){
+    for (int i = 0; i < channels->length; i++){
+        Channel *ch = (Channel *)alGet(channels, i);
+        if (ch && strcmp(ch->name, name) == 0){
             return i;
         }
     }
     return -1;
 }
-void add_channel(char *name){
-    if(channel_count >= MAX_CHANNELS) return;
-    strcpy(channels[channel_count].name, name);
-    channels[channel_count].active = 1;
-    channel_count++;
+int add_channel(char *name, int is_default){
+    Channel ch;
+    strncpy(ch.name, name, MAX_CHANNEL_NAME-1);
+    ch.name[MAX_CHANNEL_NAME-1] = '\0';
+    ch.is_default = is_default;
+    alAppend(channels, &ch);
+    return channels->length-1;
+}
+void remove_channel(int index){
+    if (index < 0 || index >= (int)channels->length) return; //might wanna intcast it just in case so yea
+    alRemove(channels, index);
+    // now we gotta fix client indices
+    for (int i = 0; i < clients->length; i++){
+        Client *c = (Client *)alGet(clients, i);
+        if (!c) continue;
+        if (c->channel_index == index){
+            c->channel_index = -1;
+            c->state = STATE_PENDING;
+            send_to_client(c->fd, "[SERVER] The channel you were in was deleted.\n"); //shouldn't be possible unless there's some strange race condition
+        } else if (c->channel_index > index){
+            c->channel_index--;
+        }
+    }
+}
+void try_delete_channel(int channel_index){ //function to check if a channel should be deleted ig lol
+    if (channel_index < 0 || channel_index >= (int)channels->length) return;
+
+    Channel *ch = (Channel *)alGet(channels, channel_index);
+    if (!ch || ch->is_default) return; // if it's default channel or doesnt even exist then stop
+
+    // check if theres any clients still connected to this channel
+    for (int i = 0; i < clients->length; i++){
+        Client *c = (Client *)alGet(clients, i);
+        if (!c) continue;
+        if (c->state == STATE_CHANNEL && c->channel_index == channel_index){
+            return;
+        }
+    }
+
+    remove_channel(channel_index);
 }
 //utility to sanitize stuff
 int validate_username(char *name) {
@@ -110,6 +148,8 @@ int validate_username(char *name) {
     for (int i = 0; i < len; i++) {
         if (!character_allowed(name[i])) return 0;
     }
+
+    if (strcmp(name, "SERVER") == 0) return 0;
 
     return 1;
 }
@@ -136,91 +176,103 @@ int validate_message(char *msg) {
 
 //Commands
 void handle_name(int i, char *name){
-    if(clients[i].state == STATE_CHANNEL){
-        send_to_client(clients[i].fd, "[SERVER] Leave the channel before trying to change your name!\n");
+    Client *c = (Client *)alGet(clients, i);
+    if (!c) return;
+
+    if(c->state == STATE_CHANNEL){
+        send_to_client(c->fd, "[SERVER] Leave the channel before trying to change your name!\n");
         return;
     }
     name[strcspn(name, "\r\n")] = 0; //trim at newline/end
 
     if (!validate_username(name)) {
-        send_to_client(clients[i].fd, "[SERVER] Invalid username!\n");
+        send_to_client(c->fd, "[SERVER] Invalid username!\n");
         return;
     }
 
-    strncpy(clients[i].username, name, MAX_USERNAME - 1);
-    clients[i].username[MAX_USERNAME - 1] = '\0';
+    strncpy(c->username, name, MAX_USERNAME - 1);
+    c->username[MAX_USERNAME - 1] = '\0';
     
-    send_to_client(clients[i].fd, "[SERVER] Name Updated.");
-
+    send_to_client(c->fd, "[SERVER] Name Updated.");
 }
 void handle_join(int i, char *channel){
-    if (clients[i].state == STATE_CHANNEL){
-        send_to_client(clients[i].fd, "[SERVER] You're already in a channel!\n");
+    Client *c = (Client *)alGet(clients, i);
+    if (!c) return;
+    if (c->state == STATE_CHANNEL){
+        send_to_client(c->fd, "[SERVER] You're already in a channel!\n");
         return;
     }
     channel[strcspn(channel, "\r\n")] = 0;
     if (!validate_channel(channel)) {
-        send_to_client(clients[i].fd, "[SERVER] Invalid channel name!\n");
+        send_to_client(c->fd, "[SERVER] Invalid channel name!\n");
         return;
     }
     int idx = find_channel(channel);
     if (idx == -1){
-        send_to_client(clients[i].fd, "[SERVER] Channel not found!\n");
-        return;
+        idx = add_channel(channel, 0); // auto-create if doesn't exist
+        send_to_client(c->fd, "[SERVER] Created new channel!\n");
     }
-    clients[i].state = STATE_CHANNEL;
-    clients[i].channel_index = idx;
-    send_to_client(clients[i].fd, "[SERVER] Joined channel successfully!");
+    c->state = STATE_CHANNEL;
+    c->channel_index = idx;
+    send_to_client(c->fd, "[SERVER] Joined channel successfully!");
 }
 void handle_leave(int i){
-    if (clients[i].state != STATE_CHANNEL){
-        send_to_client(clients[i].fd, "[SERVER] You can't leave a channel if you're not in a channel!\n");
+    Client *c = (Client *)alGet(clients, i);
+    if (!c) return;
+
+    if (c->state != STATE_CHANNEL){
+        send_to_client(c->fd, "[SERVER] You can't leave a channel if you're not in a channel!\n");
         return;
     }
-    clients[i].state = STATE_PENDING;
-    clients[i].channel_index = -1;
+    
+    int old_channel = c->channel_index;
+    c->state = STATE_PENDING;
+    c->channel_index = -1;
+    try_delete_channel(old_channel);
 
-    send_to_client(clients[i].fd, "[SERVER] Left channel successfully!");
+    send_to_client(c->fd, "[SERVER] Left channel successfully!");
 }
 void handle_list(int i){
-    send_to_client(clients[i].fd, "[SERVER] Channels:");
-    for(int j = 0; j < channel_count; j++){
-        if (channels[j].active){
+    Client *c = (Client *)alGet(clients, i);
+    if (!c) return;
+    
+    send_to_client(c->fd, "[SERVER] Active channels:\n");
+    for (int j = 0; j < channels->length; j++){
+        Channel *ch = (Channel *)alGet(channels, j);
+        if (ch){
             char buf[BUFFER_SIZE];
-            snprintf(buf, sizeof(buf), "- %s\n", channels[j].name);
-            send_to_client(clients[i].fd, buf);
+            snprintf(buf, sizeof(buf), "- %s\n", ch->name);
+            send_to_client(c->fd, buf);
         }
     }
 }
 void handle_chat(int i, char *msg){
-    if (clients[i].state != STATE_CHANNEL){
-        send_to_client(clients[i].fd, "[SERVER] In order to chat, you must join a channel first!\n");
+    Client *c = (Client *)alGet(clients, i);
+    if (!c) return;
+
+    if (c->state != STATE_CHANNEL){
+        send_to_client(c->fd, "[SERVER] In order to chat, you must join a channel first!\n");
         return;
     }
     if (!validate_message(msg)) {
-        send_to_client(clients[i].fd, "[SERVER] Invalid message!\n");
+        send_to_client(c->fd, "[SERVER] Invalid message!\n");
         return;
     }
     char out[BUFFER_SIZE];
-    snprintf(out, sizeof(out), "[%s]: %s", clients[i].username, msg);
-    broadcast(clients[i].fd, clients[i].channel_index, out);
+    snprintf(out, sizeof(out), "[%s]: %s", c->username, msg);
+    broadcast(c->fd, c->channel_index, out);
 }
 
 int main(){
+    channels = newArrayList(sizeof(Channel));
+    clients = newArrayList(sizeof(Client));
+    
     int server_fd; //server socket file descriptor - id # of server socket; linux treats sockets as ints
     struct sockaddr_in server_addr; //make struct that stores where the server lives
 
-    //initialize clients
-    for(int i=0; i<MAX_CLIENTS; i++){
-        clients[i].fd = 0;
-        clients[i].state = STATE_PENDING;
-        clients[i].channel_index = -1;
-        strcpy(clients[i].username, "null");
-    }
-
     //preset channels
-    add_channel("channel1");
-    add_channel("channel67");
+    add_channel("channel1", 1); //1 means default
+    add_channel("channel67", 1); //1 means default
 
 
     server_fd = socket(AF_INET/*for ipv4*/, SOCK_STREAM/*for TCP*/, 0/*default protocol*/); //create the actual socket
@@ -259,8 +311,10 @@ int main(){
 
         int max_fd = server_fd; //we want to know the highest numbered id so we can use select
 
-        for(int i = 0; i<MAX_CLIENTS; i++){ //find highest numbered id while also getting a set of client sockets
-            int fd = clients[i].fd;
+        for (int i = 0; i < clients->length; i++){ //find highest numbered id while also getting a set of client sockets
+            Client *c = (Client *)alGet(clients, i);
+            if (!c) continue;
+            int fd = c->fd;
             if (fd > 0) FD_SET(fd, &readfds); //add socket to watch set if client exists
             if (fd > max_fd) max_fd = fd;
         }
@@ -276,19 +330,22 @@ int main(){
         // new connection
         if (FD_ISSET(server_fd, &readfds)){ //check if server socket is "ready", which means a new client is connecting
             int new_fd = accept(server_fd, NULL, NULL); //accept the connecttion (returns the socket for the client)
-            for(int i = 0; i < MAX_CLIENTS; i++){
-                if (clients[i].fd == 0){ //find empty slot in my array
-                    clients[i].fd = new_fd;
-                    send_to_client(new_fd, "[SERVER] Welcome! Commands are:\n/name <n>\n/join <c>\n/leave\n/list\n");
-                    break;
-                }
-            }
+            Client new_client;
+            new_client.fd = new_fd;
+            new_client.state = STATE_PENDING;
+            new_client.channel_index = -1;
+            strcpy(new_client.username, "Nameless");
+            alAppend(clients, &new_client);
+            send_to_client(new_fd, "[SERVER] Welcome! Commands are:\n/name <name>\n/join <channel>\n/leave\n/list\n");
         }
 
         //handle existing clients
-        for(int i = 0; i < MAX_CLIENTS; i++){
-            int fd = clients[i].fd;
-            if (fd>0 && FD_ISSET(fd, &readfds)){ //check if client exists & has sent
+        for(int i = clients->length - 1; i >= 0; i--){ //!!! WE HAVE TO ITERATE BACKWARDS BECAUSE REMOVING CLIENTS SHIFTS BACKWARDS
+            Client *c = (Client *)alGet(clients, i);
+            if (!c) continue;
+            int fd = c->fd;
+
+            if (fd > 0 && FD_ISSET(fd, &readfds)){
                 PacketHeader header;
                 int n = recv(fd, &header, sizeof(header), 0);
 
@@ -296,50 +353,38 @@ int main(){
                     remove_client(i);
                     continue;
                 }
+                if (n != sizeof(header)) {
+                    //smth weird happened; possible in tcp but let's just not
+                    remove_client(i);
+                    continue;
+                }
 
-                // read payload if it exists
-                char payload[BUFFER_SIZE] = {0}; //make sure it's like ended properly to read
-                if (header.length > 0){ 
+                char payload[BUFFER_SIZE] = {0};
+                if (header.length > 0){
                     if (header.length >= BUFFER_SIZE){
-                        remove_client(i); //something is really wrong if this is hit (likely exploiting lol)
+                        remove_client(i);
                         continue;
                     }
                     recv(fd, payload, header.length, 0);
                     payload[header.length] = '\0';
                 }
 
-                switch(header.type){
-                    case PKT_SET_NAME: {
-                        handle_name(i, payload);
-                        break;
-                    }
-                    case PKT_JOIN: {
-                        handle_join(i, payload);
-                        break;
-                    }
-                    case PKT_LEAVE: {
-                        handle_leave(i);
-                        break;
-                    }
-                    case PKT_CHAT: {
-                        handle_chat(i, payload);
-                        break;
-                    }
-                    case PKT_LIST: {
-                        handle_list(i);
-                        break;
-                    }
-                    default: {
-                        send_to_client(fd, "[SERVER] The server received an unknown packet type; this is a code problem, not your fault\n");
-                        break;
-                    }
+                switch(header.type){ //i made this part cleaner :)
+                    case PKT_SET_NAME:  handle_name(i, payload);   break;
+                    case PKT_JOIN:      handle_join(i, payload);   break;
+                    case PKT_LEAVE:     handle_leave(i);           break;
+                    case PKT_CHAT:      handle_chat(i, payload);   break;
+                    case PKT_LIST:      handle_list(i);            break;
+                    default: send_to_client(fd, "[SERVER] Unknown packet type\n");
                 }
             }
         }
 
     } //keep alive loop;
 
-    //ok techincally this can't be reached yet but ykyk just for good measure:
+    //ok techincally this can't be reached but just for good measure / code practice:
     close(server_fd);
+    alFree(channels);
+    alFree(clients);
     return 0;
 }
