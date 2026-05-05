@@ -36,6 +36,7 @@ bool characterAllowedInUsername(char testChar);
 extern bool connected;
 extern char *username;
 extern char *activeChannel;
+extern char *reserveChannel;
 extern ArrayList *messageCache;
 
 int getSock();
@@ -45,5 +46,6 @@ ConnectionStatusType connectToServer();
 void disconnectFromServer();
 UsernameSetResponseType trySetUsername(char *newUname);
 ChannelJoinResponseType tryJoinChannel(char *channelName);
+void leaveChannel();
 void sendChatMessage(char *msg);
 void receivePartialMessage();

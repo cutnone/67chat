@@ -17,7 +17,7 @@ typedef struct {
     bool active;
 } LineEditComponent;
 
-void renderLineEdit(Component *component, BoundingBox *bbox) {
+BoundingBox *renderLineEdit(Component *component, BoundingBox *bbox) {
     LineEditComponent *le = (LineEditComponent*) component;
     int spaceForValue = bbox->size.x-strlen(le->label);
     int firstVisibleValueChar;
@@ -90,6 +90,7 @@ void renderLineEdit(Component *component, BoundingBox *bbox) {
     }
 
     le->text->component.render((Component *) le->text, bbox);
+    return bbox;
 }
 
 void lineEditReceiveInput(Component *component, int c) {

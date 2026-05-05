@@ -33,7 +33,7 @@ typedef struct {
     RectangleComponent *background;
 } Group;
 
-void renderGroup(Component *component, BoundingBox *box) {
+BoundingBox *renderGroup(Component *component, BoundingBox *box) {
     Group *group = (Group*) component;
     
     if (group->background != NULL) {
@@ -49,12 +49,18 @@ void renderGroup(Component *component, BoundingBox *box) {
     for (int i = 0; i < group->components->length; i++) {
         Component *innerComp = * (Component **)alGet(group->components, i);
         BoundingBox *innerBox = generateChildBoundingBox(box, &innerComp->anchor);
+        int innerWidth = innerBox->size.x;
+        int innerHeight = innerBox->size.y;
         // return;
-        innerComp->render(innerComp, innerBox);
+        innerBox = innerComp->render(innerComp, innerBox);
         
         // bitmask trick i learned but never had a reason to use
         // until now. is nonzero when horizontal constraining is needed.
         if (group->constraint & GROUP_HBOX) {
+            if (innerBox->size.x == innerWidth) {
+                // whole space used, exit early
+                break;
+            } 
             int outerCenter = box->topLeft.x + box->size.x/2;
             int innerCenter = innerBox->topLeft.x + innerBox->size.x/2;
             if (innerCenter >= outerCenter) {
@@ -74,18 +80,20 @@ void renderGroup(Component *component, BoundingBox *box) {
             }
         }
         if (group->constraint & GROUP_VBOX) {
+            if (innerBox->size.y == innerHeight) {
+                // whole space used, exit early
+                break;
+            } 
             int outerCenter = box->topLeft.y + box->size.y/2;
             int innerCenter = innerBox->topLeft.y + innerBox->size.y/2;
             if (innerCenter >= outerCenter) {
                 // cut bottom
-                printf("BOMM CUT\n");
                 int vdist = innerBox->topLeft.y - box->topLeft.y - group->yPad;
                 // make sure it's still in bounds
                 if (vdist >= 0 && vdist < box->size.y) {
                     box->size.y = vdist;
                 }
             } else {
-                printf("TOM CUT\n");
                 // cut top
                 int vdist = innerBox->topLeft.y + innerBox->size.y - box->topLeft.y + group->yPad;
                 if (vdist >= 0 && vdist < box->size.y) {
@@ -95,6 +103,8 @@ void renderGroup(Component *component, BoundingBox *box) {
             }
         }
     }
+
+    return box;
     
 }
 

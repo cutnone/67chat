@@ -52,7 +52,7 @@ typedef struct {
 // applied to rectangles. this means, outside of 
 // malicious usage, the downcasting in this function 
 // is safe.
-void renderText(Component *component, BoundingBox *bbox) {
+BoundingBox *renderText(Component *component, BoundingBox *bbox) {
     
     TextComponent *text = (TextComponent*) component;
     ArrayList *lineLengths = newArrayListWithCapacity(sizeof(int), bbox->size.x/2);
@@ -119,6 +119,15 @@ void renderText(Component *component, BoundingBox *bbox) {
     x = 0;
     y++;
     
+    int maxX = 0;
+    for (int i = 0; i < y; i++) {
+        int lineLen = *((int*) alGet(lineLengths, i));
+        if (lineLen > maxX) {
+            maxX = lineLen;
+        }
+    }
+    
+    
     // align text. I should remove some of the code duplication here.
     // the rendered content is left aligned at this point.
     // to get it to where it needs to be, we read from the screen buffer and
@@ -134,6 +143,7 @@ void renderText(Component *component, BoundingBox *bbox) {
                 addch(' ');
                 mvaddch(bbox->topLeft.y + i, bbox->topLeft.x + j + pad, charHere);
             }
+            bbox->topLeft.x = bbox->topLeft.x + ((bbox->size.x-maxX) / 2);
         }
     } else if (text->direction & TRD_TOP_RIGHT) {
         for (int i = 0; i < y; i++) {
@@ -145,6 +155,7 @@ void renderText(Component *component, BoundingBox *bbox) {
                 mvaddch(bbox->topLeft.y + i, bbox->topLeft.x + j + pad, charHere);
             }
         }
+        bbox->topLeft.x = bbox->topLeft.x + (bbox->size.x-maxX);
     }
     if (text->direction & TRD_MIDDLE_LEFT) {
         int pad = (bbox->size.y - y) / 2;
@@ -156,6 +167,7 @@ void renderText(Component *component, BoundingBox *bbox) {
                 mvaddch(bbox->topLeft.y + i + pad, bbox->topLeft.x + j, charHere);
             }
         }
+        bbox->topLeft.y = bbox->topLeft.y + ((bbox->size.y-y) /2);
     } else if (text->direction & TRD_BOTTOM_LEFT) {
         int pad = (bbox->size.y - y);
         for (int i = y - 1; i >= 0; i--) {
@@ -166,9 +178,14 @@ void renderText(Component *component, BoundingBox *bbox) {
                 mvaddch(bbox->topLeft.y + i + pad, bbox->topLeft.x + j, charHere);
             }
         }
+        bbox->topLeft.y = bbox->topLeft.y + (bbox->size.y-y);
     }
     alClear(lineLengths);
     attrset(A_NORMAL);
+
+    bbox->size.y = y;
+    bbox->size.x = maxX;
+    return bbox;
 }
 
 TextComponent *newTextComponent() {

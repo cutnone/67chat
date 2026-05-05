@@ -16,7 +16,7 @@ Group *chatFooter;
 TextComponent *chatUsernameText;
 TextComponent *chatChannelText;
 TextComponent *chatOptionsText;
-TextComponent *messages;
+Group *messagesContainer;
 LineEditComponent *chatMessageBox;
 TextRenderInstruction headerColorInstruction = {
     .type = TR_FORMAT,
@@ -50,22 +50,32 @@ void updateChatHeader() {
     alConcatAndFree(chatChannelText->instructions, stringToInstructions(activeChannel));
 }
 
-void (*baseRenderChatScene)(struct Component *, BoundingBox *);
-void renderChatScene(Component *component, BoundingBox *box) {
+BoundingBox *(*baseRenderChatScene)(struct Component *, BoundingBox *);
+BoundingBox *renderChatScene(Component *component, BoundingBox *box) {
     // regenerate big long string
-    StringBuilder *sb = newStringBuilder();
     // return;
-    for (int i = 0; i < messageCache->length; i++) {
-        sbAppendC(sb, '\n');
-        char *str = *((char**) alGet(messageCache, i));
-        sbAppend(sb, str, strlen(str));
+    for (int i = 0; i < messagesContainer->components->length; i++) {
+        TextComponent *textComp = *((TextComponent **) alGet(messagesContainer->components, i));
+        alResizeList(textComp->instructions, 0);
+        free(textComp);
     }
-    sbAppend(sb, "\n\n\n", 3);
-    alResizeList(messages->instructions, 0);
-    alConcatAndFree(messages->instructions, stringToInstructions(sb->data));
+    alResizeList(messagesContainer->components, 0);
+    for (int i = messageCache->length-1; i >= 0; i--) {
+        char *text = *((char **) alGet(messageCache, i));
+        TextComponent *message = newTextComponent();
+        message->direction = TRD_BOTTOM_LEFT;
+        message->component.anchor.size.xType = VEC_RELATIVE;
+        message->component.anchor.size.yType = VEC_RELATIVE;
+        message->component.anchor.size.relX = 1.0;
+        message->component.anchor.size.relY = 1.0;
+        alConcatAndFree(message->instructions, stringToInstructions(text));
+        alAppend(messagesContainer->components, &message);
+    }
+    // sbAppend(sb, "\n\n\n", 3);
+    // alResizeList(messages->instructions, 0);
+    // alConcatAndFree(messages->instructions, stringToInstructions(sb->data));
     // alConcatAndFree(messages->instructions, stringToInstructions("your mom fucked your dad\n\n\n"));
-    sbFree(sb);
-    baseRenderChatScene(component, box);
+    return baseRenderChatScene(component, box);
 }
 
 void initializeChatScene() {
@@ -126,14 +136,15 @@ void initializeChatScene() {
     chatMessageBox->active = true;
     alAppend(chatFooter->components, &chatMessageBox);
 
-    messages = newTextComponent();
-    messages->direction = TRD_BOTTOM_LEFT;
-    messages->component.anchor.size.xType = VEC_RELATIVE;
-    messages->component.anchor.size.yType = VEC_RELATIVE;
-    messages->component.anchor.size.relX = 1.0;
-    messages->component.anchor.size.relY = 1.0;
+    messagesContainer = newGroup();
+    messagesContainer->constraint = GROUP_VBOX;
+    messagesContainer->component.anchor.size.xType = VEC_RELATIVE;
+    messagesContainer->component.anchor.size.yType = VEC_RELATIVE;
+    messagesContainer->component.anchor.size.relX = 1.0;
+    messagesContainer->component.anchor.size.relY = 1.0;
 
     chatScene = newGroup();
+    chatScene->constraint = GROUP_VBOX;
     chatScene->component.receiveInput = chatSceneReceiveInput;
     baseRenderChatScene = chatScene->component.render;
     chatScene->component.render = renderChatScene;
@@ -141,8 +152,8 @@ void initializeChatScene() {
     chatScene->component.anchor.size.yType = VEC_RELATIVE;
     chatScene->component.anchor.size.relX = 1.0;
     chatScene->component.anchor.size.relY = 1.0;
-    alAppend(chatScene->components, &messages);
-    alAppend(chatScene->components, &chatFooter);
     alAppend(chatScene->components, &chatHeader);
+    alAppend(chatScene->components, &chatFooter);
+    alAppend(chatScene->components, &messagesContainer);
 
 }

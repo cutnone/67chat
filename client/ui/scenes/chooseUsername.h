@@ -4,3 +4,4 @@
 extern Group *chooseUsernameScene;
 
 void initializeChooseUsername();
+void resetChooseUsername();

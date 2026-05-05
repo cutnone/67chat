@@ -36,9 +36,15 @@ void optionsReceiveInput(Component *component, int c) {
             disconnectFromServer();
             exit(0);
         case 'u':
+            resetChooseUsername();
+            leaveChannel();
             screenComponent = (Component *) chooseUsernameScene;
             break; 
         case 'c':
+            leaveChannel();
+            free(reserveChannel);
+            reserveChannel = NULL;
+            resetChooseChannel();
             screenComponent = (Component *) chooseChannelScene;    
             break;
     }

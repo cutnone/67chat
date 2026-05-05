@@ -51,9 +51,10 @@ void chooseUsernameReceiveInput(Component *component, int c) {
                     statusText->instructions = stringToInstructions("Set successfully!");
                     rerender();
                     sleepMs(500);
-                    if (activeChannel == NULL) {
+                    if (reserveChannel == NULL) {
                         screenComponent = (Component*) chooseChannelScene;
                     } else {
+                        tryJoinChannel(reserveChannel);
                         screenComponent = (Component*) chatScene;
                     }
                     return;
@@ -102,4 +103,6 @@ void initializeChooseUsername() {
 
 void resetChooseUsername() {
     statusText->instructions = stringToInstructions("Enter a username <= 16 characters (A-z, 0-9, \\_). Press ENTER to continue.");
+    sbClear(textInput->value);
+    textInput->cursor = 0;
 }

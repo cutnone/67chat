@@ -10,9 +10,9 @@ const int MIN_HEIGHT = 20;
 
 TextComponent *resizeText;
 Group *resizeScene;
-void (*groupRenderer)(Component *, BoundingBox *);
+BoundingBox *(*groupRenderer)(Component *, BoundingBox *);
 
-void renderHook(Component *component, BoundingBox *bbox) {
+BoundingBox *renderHook(Component *component, BoundingBox *bbox) {
     int maxY = getmaxy(curscr), maxX = getmaxx(curscr);
     TextRenderInstruction instr = {
         .type = TR_WORD,
@@ -24,7 +24,7 @@ void renderHook(Component *component, BoundingBox *bbox) {
         instr.text = "taller.";
     }
     alReplace(resizeText->instructions, resizeText->instructions->length-1, &instr);
-    groupRenderer(component, bbox);
+    return groupRenderer(component, bbox);
 }
 
 void initializeResizeScene() {

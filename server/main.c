@@ -63,6 +63,8 @@ typedef struct Client {
 ArrayList *clients;
 ArrayList *channels;
 
+void try_delete_channel(int channel_index);
+
 // client sending utility stuff
 void send_to_client(int fd, char *msg){
     printf("msg: %s\n", msg);

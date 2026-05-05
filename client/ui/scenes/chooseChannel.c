@@ -92,3 +92,9 @@ void initializeChooseChannel() {
     alAppend(chooseChannelScene->components, &ccTextInput);
 
 }
+
+void resetChooseChannel() {
+    ccStatusText->instructions = stringToInstructions("Enter a channel <= 16 characters (A-z, 0-9, \\_). Press ENTER to continue.");
+    sbClear(ccTextInput->value);
+    ccTextInput->cursor = 0;
+}

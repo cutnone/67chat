@@ -81,6 +81,7 @@ bool characterAllowedInUsername(char testChar) {
 bool connected = false;
 char *username = NULL;
 char *activeChannel = NULL;
+char *reserveChannel = NULL;
 ArrayList *messageCache;
 StringBuilder *messageBuilder;
 
@@ -204,6 +205,10 @@ ChannelJoinResponseType tryJoinChannel(char *channelName) {
     send_packet(PKT_JOIN, channelName);
     free(activeChannel);
     activeChannel = strdup(channelName);
+    if (channelName != reserveChannel) {
+        reserveChannel = strdup(channelName);
+        alResizeList(messageCache, 0);
+    }
     return CJOIN_OK;
 }
 

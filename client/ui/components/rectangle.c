@@ -16,7 +16,7 @@ typedef struct {
 // applied to rectangles. this means, outside of 
 // malicious usage, the downcasting in this function 
 // is safe.
-void renderRect(Component *component, BoundingBox *bbox) {
+BoundingBox *renderRect(Component *component, BoundingBox *bbox) {
     RectangleComponent *rect = (RectangleComponent*) component;
     // char txt[20];
     // sprintf(txt, "p %d %d", bbox->topLeft.x, bbox->topLeft.y);
@@ -29,6 +29,7 @@ void renderRect(Component *component, BoundingBox *bbox) {
         }
     }
     attrset(A_NORMAL);
+    return bbox;
 }
 
 RectangleComponent *newRectangle() {

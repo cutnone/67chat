@@ -4,3 +4,4 @@
 extern Group *chooseChannelScene;
 
 void initializeChooseChannel();
+void resetChooseChannel();
