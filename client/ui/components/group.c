@@ -48,7 +48,6 @@ void renderGroup(Component *component, BoundingBox *box) {
     
     for (int i = 0; i < group->components->length; i++) {
         Component *innerComp = * (Component **)alGet(group->components, i);
-        printf("things %p %p\n", box, &innerComp->anchor);
         BoundingBox *innerBox = generateChildBoundingBox(box, &innerComp->anchor);
         // return;
         innerComp->render(innerComp, innerBox);
@@ -79,12 +78,14 @@ void renderGroup(Component *component, BoundingBox *box) {
             int innerCenter = innerBox->topLeft.y + innerBox->size.y/2;
             if (innerCenter >= outerCenter) {
                 // cut bottom
+                printf("BOMM CUT\n");
                 int vdist = innerBox->topLeft.y - box->topLeft.y - group->yPad;
                 // make sure it's still in bounds
                 if (vdist >= 0 && vdist < box->size.y) {
                     box->size.y = vdist;
                 }
             } else {
+                printf("TOM CUT\n");
                 // cut top
                 int vdist = innerBox->topLeft.y + innerBox->size.y - box->topLeft.y + group->yPad;
                 if (vdist >= 0 && vdist < box->size.y) {

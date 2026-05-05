@@ -68,7 +68,8 @@ int channel_count = 0;
 
 // client sending utility stuff
 void send_to_client(int fd, char *msg){
-    send(fd, msg, strlen(msg), 0);
+    printf("msg: %s\n", msg);
+    send(fd, msg, strlen(msg)+1 /* include null byte */, 0);
 }
 void broadcast(int sender_fd, int channel_index, char *msg){
     for(int i=0; i<MAX_CLIENTS; i++){
@@ -149,7 +150,8 @@ void handle_name(int i, char *name){
     strncpy(clients[i].username, name, MAX_USERNAME - 1);
     clients[i].username[MAX_USERNAME - 1] = '\0';
     
-    send_to_client(clients[i].fd, "[SERVER] Name Updated.\n");
+    send_to_client(clients[i].fd, "[SERVER] Name Updated.");
+
 }
 void handle_join(int i, char *channel){
     if (clients[i].state == STATE_CHANNEL){
@@ -168,7 +170,7 @@ void handle_join(int i, char *channel){
     }
     clients[i].state = STATE_CHANNEL;
     clients[i].channel_index = idx;
-    send_to_client(clients[i].fd, "[SERVER] Joined channel successfully!\n");
+    send_to_client(clients[i].fd, "[SERVER] Joined channel successfully!");
 }
 void handle_leave(int i){
     if (clients[i].state != STATE_CHANNEL){
@@ -178,10 +180,10 @@ void handle_leave(int i){
     clients[i].state = STATE_PENDING;
     clients[i].channel_index = -1;
 
-    send_to_client(clients[i].fd, "[SERVER] Left channel successfully!\n");
+    send_to_client(clients[i].fd, "[SERVER] Left channel successfully!");
 }
 void handle_list(int i){
-    send_to_client(clients[i].fd, "[SERVER] Channels:\n");
+    send_to_client(clients[i].fd, "[SERVER] Channels:");
     for(int j = 0; j < channel_count; j++){
         if (channels[j].active){
             char buf[BUFFER_SIZE];
@@ -217,8 +219,8 @@ int main(){
     }
 
     //preset channels
-    add_channel("channel 1");
-    add_channel("channel 67");
+    add_channel("channel1");
+    add_channel("channel67");
 
 
     server_fd = socket(AF_INET/*for ipv4*/, SOCK_STREAM/*for TCP*/, 0/*default protocol*/); //create the actual socket

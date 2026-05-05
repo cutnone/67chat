@@ -1,5 +1,6 @@
 #pragma once
 #include <math.h>
+#include <stdbool.h>
 
 typedef struct {
     int x;
@@ -39,6 +40,7 @@ extern Anchor zeroAnchor;
 typedef struct {
     IntVec2 topLeft;
     IntVec2 size;
+    bool clip;
 } BoundingBox;
 
 IntVec2 *applyGenericVec2(IntVec2 *base, GenericVec2 *vec);

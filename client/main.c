@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "interface.h"
+#include "comms.h"
 #include "ui/scenes/connect.h"
 #include "ui/scenes/testScene.h"
 #include "ui/scenes/chooseUsername.h"
@@ -9,6 +10,11 @@
 #include "ui/scenes/chooseChannel.h"
 #include "ui/scenes/resizeScene.h"
 #include "ui/scenes/optionsScene.h"
+#ifdef _WIN32
+#else  
+    #include <sys/select.h>
+    #include <unistd.h>
+#endif
 
 static void finish(int sig);
 void handleResize(int _);
@@ -35,8 +41,24 @@ int main() {
     init();
     
     rerender();
-    for (;;) {
-        checkKeystrokes();
+    while (true) {
+        fd_set fds;
+        FD_ZERO(&fds);
+        int maxfd = STDIN_FILENO + 1;
+        if (connected) {
+            maxfd = (sock > STDIN_FILENO ? sock : STDIN_FILENO) + 1;
+            FD_SET(sock, &fds);
+        }
+        FD_SET(STDIN_FILENO, &fds);
+        struct timeval tv = {.tv_sec = 0, .tv_usec = 100000};
+        select(maxfd, &fds, NULL, NULL, &tv);
+        if (FD_ISSET(STDIN_FILENO, &fds)) {
+            checkKeystrokes();
+        }
+        if (FD_ISSET(sock, &fds)) {
+            receivePartialMessage();
+            rerender();
+        }
     }
 
     // finish(0);

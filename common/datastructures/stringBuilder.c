@@ -31,7 +31,7 @@ void sbAppend(StringBuilder *sb, char *src, unsigned int srcLen) {
         // make room for the new string and 1.5x the cap.
         sbResize(sb, sb->capacity + srcLen + sb->capacity/2);
     }
-    strcat(sb->data, src);
+    strncat(sb->data, src, srcLen);
     sb->length += srcLen;
 }
 void sbAppendC(StringBuilder *sb, char src) {
@@ -79,6 +79,10 @@ void sbInsertC(StringBuilder *sb, unsigned int index, char src) {
     }
     sb->length++;
     (sb->data)[index] = src;
+}
+void sbFree(StringBuilder *sb) {
+    free(sb->data);
+    free(sb);
 }
 
 

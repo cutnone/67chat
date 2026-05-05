@@ -1,6 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdbool.h>
+#include "../common/datastructures/arrayList.h"
 
 typedef enum {
     CONNECTION_OK,
@@ -23,13 +24,19 @@ typedef enum {
     CJOIN_FAILED,
 } ChannelJoinResponseType;
 
+#ifdef _WIN32
+    extern SOCKET sock;
+#else
+    extern int sock;
+#endif
 extern const int MAX_USERNAME_LENGTH;
 extern const int MIN_USERNAME_LENGTH;
 bool characterAllowedInUsername(char testChar);
 
-extern int connId;
+extern bool connected;
 extern char *username;
 extern char *activeChannel;
+extern ArrayList *messageCache;
 
 int getSock();
 char *getUsername();
@@ -38,3 +45,5 @@ ConnectionStatusType connectToServer();
 void disconnectFromServer();
 UsernameSetResponseType trySetUsername(char *newUname);
 ChannelJoinResponseType tryJoinChannel(char *channelName);
+void sendChatMessage(char *msg);
+void receivePartialMessage();

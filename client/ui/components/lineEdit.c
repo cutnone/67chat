@@ -96,6 +96,8 @@ void lineEditReceiveInput(Component *component, int c) {
     LineEditComponent *le = (LineEditComponent*) component;
     switch (c) {
         case '\b':
+        case 127: // macos backspace
+        case KEY_DC:
         case KEY_BACKSPACE:
             if (le->cursor > 0) {
                 sbRemove(le->value, le->cursor-1);

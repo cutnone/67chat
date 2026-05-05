@@ -16,6 +16,7 @@ Group *chatFooter;
 TextComponent *chatUsernameText;
 TextComponent *chatChannelText;
 TextComponent *chatOptionsText;
+TextComponent *messages;
 LineEditComponent *chatMessageBox;
 TextRenderInstruction headerColorInstruction = {
     .type = TR_FORMAT,
@@ -23,14 +24,16 @@ TextRenderInstruction headerColorInstruction = {
 };
 
 void chatSceneReceiveInput(Component *component, int c) {
-    printf("PRESSSED %c %d", c, c);
     switch (c) {
         case 27: // escape
             screenComponent = (Component *) optionsScene;
             break; 
         case '\r':
         case '\n':
+            if (chatMessageBox->value->length == 0) break;
+            sendChatMessage(chatMessageBox->value->data);
             sbClear(chatMessageBox->value);
+            chatMessageBox->cursor = 0;
             break;
         default:
             chatMessageBox->component.receiveInput((Component *) chatMessageBox, c);
@@ -39,13 +42,30 @@ void chatSceneReceiveInput(Component *component, int c) {
 }
 
 void updateChatHeader() {
-    printf("%s %s \n", username, activeChannel);
     alClear(chatUsernameText->instructions);
     alAppend(chatUsernameText->instructions, &headerColorInstruction);
     alConcatAndFree(chatUsernameText->instructions, stringToInstructions(username));
     alClear(chatChannelText->instructions);
     alAppend(chatChannelText->instructions, &headerColorInstruction);
     alConcatAndFree(chatChannelText->instructions, stringToInstructions(activeChannel));
+}
+
+void (*baseRenderChatScene)(struct Component *, BoundingBox *);
+void renderChatScene(Component *component, BoundingBox *box) {
+    // regenerate big long string
+    StringBuilder *sb = newStringBuilder();
+    // return;
+    for (int i = 0; i < messageCache->length; i++) {
+        sbAppendC(sb, '\n');
+        char *str = *((char**) alGet(messageCache, i));
+        sbAppend(sb, str, strlen(str));
+    }
+    sbAppend(sb, "\n\n\n", 3);
+    alResizeList(messages->instructions, 0);
+    alConcatAndFree(messages->instructions, stringToInstructions(sb->data));
+    // alConcatAndFree(messages->instructions, stringToInstructions("your mom fucked your dad\n\n\n"));
+    sbFree(sb);
+    baseRenderChatScene(component, box);
 }
 
 void initializeChatScene() {
@@ -106,13 +126,23 @@ void initializeChatScene() {
     chatMessageBox->active = true;
     alAppend(chatFooter->components, &chatMessageBox);
 
+    messages = newTextComponent();
+    messages->direction = TRD_BOTTOM_LEFT;
+    messages->component.anchor.size.xType = VEC_RELATIVE;
+    messages->component.anchor.size.yType = VEC_RELATIVE;
+    messages->component.anchor.size.relX = 1.0;
+    messages->component.anchor.size.relY = 1.0;
+
     chatScene = newGroup();
     chatScene->component.receiveInput = chatSceneReceiveInput;
+    baseRenderChatScene = chatScene->component.render;
+    chatScene->component.render = renderChatScene;
     chatScene->component.anchor.size.xType = VEC_RELATIVE;
     chatScene->component.anchor.size.yType = VEC_RELATIVE;
     chatScene->component.anchor.size.relX = 1.0;
     chatScene->component.anchor.size.relY = 1.0;
-    alAppend(chatScene->components, &chatHeader);
+    alAppend(chatScene->components, &messages);
     alAppend(chatScene->components, &chatFooter);
+    alAppend(chatScene->components, &chatHeader);
 
 }

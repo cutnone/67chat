@@ -60,6 +60,7 @@ void renderText(Component *component, BoundingBox *bbox) {
     int y = 0;
     int newLine = 0; // 0 means off, 1 means on, 2 means turn me back off.
     for (int i = 0; i < text->instructions->length; i++) {
+        if (bbox->clip && y > bbox->size.y) break; 
         TextRenderInstruction *instr = alGet(text->instructions, i);
         // printf("BEEP %d\n", instr->type);
         switch (instr->type) {

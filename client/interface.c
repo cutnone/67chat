@@ -13,6 +13,7 @@
 #include "ui/components/text.h"
 #include "ui/components/group.h"
 #include "ui/scenes/resizeScene.h"
+#include "comms.h"
 #include "../common/datastructures/arrayList.h"
 
 Component *screenComponent = NULL;
@@ -23,7 +24,9 @@ void init() {
     cbreak();
     nonl();
     noecho();
+    nodelay(stdscr, TRUE);
     curs_set(0);
+    set_escdelay(25);
     if (has_colors()) {
         start_color();
         
@@ -64,7 +67,7 @@ void rerender() {
             .x = maxX,
             .y = maxY,
         },
-        
+        .clip = true,
     };
     if (renderThis != NULL) {
         BoundingBox *applied = generateChildBoundingBox(&screenBox, &renderThis->anchor);
@@ -87,7 +90,7 @@ void resize() {
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws);  // ask kernel for new size
         resizeterm(ws.ws_row, ws.ws_col);
     #endif
-    
+    alResizeList(messageCache, getmaxy(curscr));
     // endwin();
     refresh();
     rerender();

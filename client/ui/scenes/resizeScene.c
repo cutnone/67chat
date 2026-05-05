@@ -6,7 +6,7 @@
 #include <stddef.h>
 
 const int MIN_WIDTH = 50;
-const int MIN_HEIGHT = 30;
+const int MIN_HEIGHT = 20;
 
 TextComponent *resizeText;
 Group *resizeScene;
@@ -24,7 +24,7 @@ void renderHook(Component *component, BoundingBox *bbox) {
         instr.text = "taller.";
     }
     alReplace(resizeText->instructions, resizeText->instructions->length-1, &instr);
-    (*groupRenderer)(component, bbox);
+    groupRenderer(component, bbox);
 }
 
 void initializeResizeScene() {

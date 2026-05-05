@@ -99,3 +99,7 @@ void initializeChooseUsername() {
     alAppend(chooseUsernameScene->components, &textInput);
 
 }
+
+void resetChooseUsername() {
+    statusText->instructions = stringToInstructions("Enter a username <= 16 characters (A-z, 0-9, \\_). Press ENTER to continue.");
+}

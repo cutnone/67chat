@@ -15,4 +15,5 @@ void sbRemove(StringBuilder *sb, unsigned int index);
 void sbInsertC(StringBuilder *sb, unsigned int index, char src);
 void sbClear(StringBuilder *sb);
 void sbClip(StringBuilder *sb, unsigned int n);
+void sbFree(StringBuilder *sb);
 StringBuilder *newStringBuilder();
