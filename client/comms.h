@@ -31,7 +31,7 @@ extern int connId;
 extern char *username;
 extern char *activeChannel;
 
-int getConnId();
+int getSock();
 char *getUsername();
 char *getActiveChannel();
 ConnectionStatusType connectToServer();

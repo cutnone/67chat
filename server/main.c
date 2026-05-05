@@ -6,14 +6,21 @@
 #include <sys/select.h>
 #include <string.h>
 
-// constants:
+//server is <500 lines so idk if it's even worth separating; it's actually quite nice and clean like this unlike the complicated client (oh god)
+
+// constants: (must match client)
 #define PORT 6767
 #define MAX_CLIENTS 67
 #define BUFFER_SIZE 1024
-#define MAX_USERNAME 24
-#define MAX_CHANNEL_NAME 24
+#define MAX_USERNAME 16
+#define MAX_CHANNEL_NAME 16
 #define MAX_CHANNELS 67
+#define MIN_USERNAME 3
+#define MIN_CHANNEL_NAME 3
 
+
+
+// !!! MUST MATCH comms.c !!!
 typedef enum {
     STATE_PENDING,
     STATE_CHANNEL
@@ -31,6 +38,17 @@ typedef struct PacketHeader { //for packets
     uint8_t type;      // which packet
     uint16_t length;   // payload size
 } PacketHeader;
+// end stuff from comms.c lol
+
+//helper from client ig 
+int character_allowed(char c) {
+    return (
+        c == '_' ||
+        (c >= '0' && c <= '9') ||
+        (c >= 'A' && c <= 'Z') ||
+        (c >= 'a' && c <= 'z')
+    );
+}
 
 typedef struct Channel { //boom i can now use it either way
     char name[MAX_CHANNEL_NAME];
@@ -81,14 +99,56 @@ void add_channel(char *name){
     channels[channel_count].active = 1;
     channel_count++;
 }
+//utility to sanitize stuff
+int validate_username(char *name) {
+    int len = strnlen(name, MAX_USERNAME + 1);
+
+    if (len < MIN_USERNAME) return 0;
+    if (len > MAX_USERNAME) return 0;
+
+    for (int i = 0; i < len; i++) {
+        if (!character_allowed(name[i])) return 0;
+    }
+
+    return 1;
+}
+int validate_channel(char *name) {
+    int len = strnlen(name, MAX_CHANNEL_NAME + 1);
+
+    if (len < MIN_CHANNEL_NAME) return 0;
+    if (len > MAX_CHANNEL_NAME) return 0;
+
+    for (int i = 0; i < len; i++) {
+        if (!character_allowed(name[i])) return 0;
+    }
+
+    return 1;
+}
+int validate_message(char *msg) {
+    int len = strnlen(msg, BUFFER_SIZE);
+
+    if (len == 0) return 0;
+    if (len >= BUFFER_SIZE - 1) return 0;
+
+    return 1;
+}
+
 //Commands
 void handle_name(int i, char *name){
     if(clients[i].state == STATE_CHANNEL){
         send_to_client(clients[i].fd, "[SERVER] Leave the channel before trying to change your name!\n");
         return;
     }
-    name[strcspn(name, "\r\n")] = 0; //trim the newlines
+    name[strcspn(name, "\r\n")] = 0; //trim at newline/end
+
+    if (!validate_username(name)) {
+        send_to_client(clients[i].fd, "[SERVER] Invalid username!\n");
+        return;
+    }
+
     strncpy(clients[i].username, name, MAX_USERNAME - 1);
+    clients[i].username[MAX_USERNAME - 1] = '\0';
+    
     send_to_client(clients[i].fd, "[SERVER] Name Updated.\n");
 }
 void handle_join(int i, char *channel){
@@ -96,16 +156,18 @@ void handle_join(int i, char *channel){
         send_to_client(clients[i].fd, "[SERVER] You're already in a channel!\n");
         return;
     }
-    channel[strcspn(channel, "\r\n")] = 0; //trim the newlines
+    channel[strcspn(channel, "\r\n")] = 0;
+    if (!validate_channel(channel)) {
+        send_to_client(clients[i].fd, "[SERVER] Invalid channel name!\n");
+        return;
+    }
     int idx = find_channel(channel);
     if (idx == -1){
         send_to_client(clients[i].fd, "[SERVER] Channel not found!\n");
         return;
     }
-
     clients[i].state = STATE_CHANNEL;
     clients[i].channel_index = idx;
-
     send_to_client(clients[i].fd, "[SERVER] Joined channel successfully!\n");
 }
 void handle_leave(int i){
@@ -133,11 +195,14 @@ void handle_chat(int i, char *msg){
         send_to_client(clients[i].fd, "[SERVER] In order to chat, you must join a channel first!\n");
         return;
     }
+    if (!validate_message(msg)) {
+        send_to_client(clients[i].fd, "[SERVER] Invalid message!\n");
+        return;
+    }
     char out[BUFFER_SIZE];
     snprintf(out, sizeof(out), "[%s]: %s", clients[i].username, msg);
     broadcast(clients[i].fd, clients[i].channel_index, out);
 }
-
 
 int main(){
     int server_fd; //server socket file descriptor - id # of server socket; linux treats sockets as ints
@@ -232,8 +297,13 @@ int main(){
 
                 // read payload if it exists
                 char payload[BUFFER_SIZE] = {0}; //make sure it's like ended properly to read
-                if (header.length > 0){
+                if (header.length > 0){ 
+                    if (header.length >= BUFFER_SIZE){
+                        remove_client(i); //something is really wrong if this is hit (likely exploiting lol)
+                        continue;
+                    }
                     recv(fd, payload, header.length, 0);
+                    payload[header.length] = '\0';
                 }
 
                 switch(header.type){
