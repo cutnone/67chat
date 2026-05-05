@@ -50,7 +50,7 @@ void renderGroup(Component *component, BoundingBox *box) {
         Component *innerComp = * (Component **)alGet(group->components, i);
         printf("things %p %p\n", box, &innerComp->anchor);
         BoundingBox *innerBox = generateChildBoundingBox(box, &innerComp->anchor);
-        return;
+        // return;
         innerComp->render(innerComp, innerBox);
         
         // bitmask trick i learned but never had a reason to use

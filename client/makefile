@@ -6,7 +6,7 @@
 
 ifeq ($(OS), Windows_NT)
     # Windows settings
-    LIBS = -l:pdcurses.a
+    LIBS = -l:pdcurses.a -lws2_32
     INCLUDES = -I C:/ProgramData/mingw64/mingw64/include
     LIBDIRS = -L C:/ProgramData/mingw64/mingw64/lib
     EXT = .exe

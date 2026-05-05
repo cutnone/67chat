@@ -4,9 +4,11 @@
 #include "../components/lineEdit.h"
 #include "../../comms.h"
 #include "../../interface.h"
-#include "testScene.h"
+#include "../../../common/datastructures/stringBuilder.h"
+#include "optionsScene.h"
 #include <curses.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 Group *chatScene;
 Group *chatHeader;
@@ -19,6 +21,22 @@ TextRenderInstruction headerColorInstruction = {
     .type = TR_FORMAT,
     .attrs = COLOR_PAIR(3),
 };
+
+void chatSceneReceiveInput(Component *component, int c) {
+    printf("PRESSSED %c %d", c, c);
+    switch (c) {
+        case 27: // escape
+            screenComponent = (Component *) optionsScene;
+            break; 
+        case '\r':
+        case '\n':
+            sbClear(chatMessageBox->value);
+            break;
+        default:
+            chatMessageBox->component.receiveInput((Component *) chatMessageBox, c);
+            break;
+    }
+}
 
 void updateChatHeader() {
     printf("%s %s \n", username, activeChannel);
@@ -45,13 +63,13 @@ void initializeChatScene() {
     groupAddBackground(chatHeader, 3);
 
     chatOptionsText = newTextComponent();
-    char *chatOptionsString = "Press ESC for options...";
+    char *chatOptionsString = "ESC For Options";
     alAppend(chatOptionsText->instructions, &headerColorInstruction);
     alConcatAndFree(chatOptionsText->instructions, stringToInstructions(chatOptionsString));
-    chatOptionsText->component.anchor.size.absX = strlen(chatOptionsString);
+    chatOptionsText->component.anchor.size.absX = MAX_USERNAME_LENGTH;
 
     chatUsernameText = newTextComponent();
-    chatUsernameText->component.anchor.size.absX = strlen(chatOptionsString);
+    chatUsernameText->component.anchor.size.absX = MAX_USERNAME_LENGTH;
     chatUsernameText->direction = TRD_TOP_RIGHT;
     chatUsernameText->component.anchor.origin.relX = 1.0;
     chatUsernameText->component.anchor.position.xType = VEC_RELATIVE;
@@ -84,9 +102,12 @@ void initializeChatScene() {
     chatMessageBox->component.anchor.size.xType = VEC_RELATIVE;
     chatMessageBox->component.anchor.size.relX = 1.0;
     chatMessageBox->component.anchor.size.absY = 1;
+    chatMessageBox->label = "Message: ";
+    chatMessageBox->active = true;
     alAppend(chatFooter->components, &chatMessageBox);
 
     chatScene = newGroup();
+    chatScene->component.receiveInput = chatSceneReceiveInput;
     chatScene->component.anchor.size.xType = VEC_RELATIVE;
     chatScene->component.anchor.size.yType = VEC_RELATIVE;
     chatScene->component.anchor.size.relX = 1.0;

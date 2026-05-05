@@ -63,7 +63,7 @@ void renderText(Component *component, BoundingBox *bbox) {
         TextRenderInstruction *instr = alGet(text->instructions, i);
         // printf("BEEP %d\n", instr->type);
         switch (instr->type) {
-            case TR_WORD: { // using a block here to get around the 'label after declaration' warning
+            case TR_WORD: { // using a block here to get around the 'label before declaration' warning
                 int len = strlen(instr->text);
                 if (len > bbox->size.x - x) {
                     if (mvinch(y, x - 1) == ' ') x--;

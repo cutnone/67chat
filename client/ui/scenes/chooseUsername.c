@@ -5,6 +5,7 @@
 #include "../../comms.h"
 #include "../../interface.h"
 #include "chooseChannel.h"
+#include "chatScene.h"
 #include <curses.h>
 #include <stdbool.h>
 
@@ -50,7 +51,11 @@ void chooseUsernameReceiveInput(Component *component, int c) {
                     statusText->instructions = stringToInstructions("Set successfully!");
                     rerender();
                     sleepMs(500);
-                    screenComponent = (Component*) chooseChannelScene;
+                    if (activeChannel == NULL) {
+                        screenComponent = (Component*) chooseChannelScene;
+                    } else {
+                        screenComponent = (Component*) chatScene;
+                    }
                     return;
             }
             break;

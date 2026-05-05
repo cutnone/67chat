@@ -35,5 +35,6 @@ int getSock();
 char *getUsername();
 char *getActiveChannel();
 ConnectionStatusType connectToServer();
+void disconnectFromServer();
 UsernameSetResponseType trySetUsername(char *newUname);
 ChannelJoinResponseType tryJoinChannel(char *channelName);

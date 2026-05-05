@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include <stddef.h>
 
-const int MIN_WIDTH = 30;
-const int MIN_HEIGHT = 20;
+const int MIN_WIDTH = 50;
+const int MIN_HEIGHT = 30;
 
 TextComponent *resizeText;
 Group *resizeScene;
@@ -20,7 +20,7 @@ void renderHook(Component *component, BoundingBox *bbox) {
     };
     if (maxX < MIN_WIDTH && maxY >= MIN_HEIGHT) {
         instr.text = "wider.";
-    } else if (maxX < MIN_WIDTH && maxY >= MIN_HEIGHT) {
+    } else if (maxY < MIN_HEIGHT && maxX >= MIN_WIDTH) {
         instr.text = "taller.";
     }
     alReplace(resizeText->instructions, resizeText->instructions->length-1, &instr);
@@ -37,13 +37,13 @@ void initializeResizeScene() {
     groupRenderer = resizeScene->component.render;
     resizeScene->component.render = renderHook;
     resizeText = newTextComponent();
-    alConcatAndFree(resizeText->instructions, stringToInstructions("Please make your terminal bigger."));
     resizeText->direction = TRD_TOP_MIDDLE;
     resizeText->component.anchor.size.absY = 1;
     resizeText->component.anchor.size.xType = VEC_RELATIVE;
     resizeText->component.anchor.size.relX = 1.0;
     resizeText->component.anchor.position.yType = VEC_RELATIVE;
     resizeText->component.anchor.position.relY = 0.5;
+    alConcatAndFree(resizeText->instructions, stringToInstructions("Please make your terminal bigger."));
 
-    alAppend(resizeScene->components, resizeText);
+    alAppend(resizeScene->components, &resizeText);
 }
