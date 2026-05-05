@@ -139,7 +139,7 @@ ConnectionStatusType connectToServer(){
     struct sockaddr_in server_addr; //simialr stuff as the server here
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(PORT); //make sure server port matches client port lol (6767)
-    inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr); //assuming a local connection atm
+    inet_pton(AF_INET, "167.71.176.13", &server_addr.sin_addr); //assuming a local connection atm
 
     if (connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
         close(sock); //there's a problem if connect returns negative
