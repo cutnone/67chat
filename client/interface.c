@@ -2,6 +2,7 @@
 
 #include <curses.h>
 #include "ui/component.h"
+#include "comms.h"
 #ifdef _WIN32
     #include <windows.h>
 #else
@@ -13,7 +14,6 @@
 #include "ui/components/text.h"
 #include "ui/components/group.h"
 #include "ui/scenes/resizeScene.h"
-#include "comms.h"
 #include "../common/datastructures/arrayList.h"
 
 Component *screenComponent = NULL;
@@ -26,7 +26,9 @@ void init() {
     noecho();
     nodelay(stdscr, TRUE);
     curs_set(0);
-    set_escdelay(25);
+    #ifndef _WIN32
+        set_escdelay(25);
+    #endif
     if (has_colors()) {
         start_color();
         
@@ -116,4 +118,7 @@ void checkKeystrokes() {
 
 void cleanup() {
     endwin();
+    #ifdef _WIN32
+        WSACleanup();
+    #endif
 }

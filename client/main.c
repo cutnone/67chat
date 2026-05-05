@@ -1,3 +1,12 @@
+#ifdef _WIN32
+    #include <winsock2.h>
+    #include <windows.h>
+    // windows support taught by claude
+#else  
+    #include <sys/select.h>
+    #include <unistd.h>
+#endif
+
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,11 +19,6 @@
 #include "ui/scenes/chooseChannel.h"
 #include "ui/scenes/resizeScene.h"
 #include "ui/scenes/optionsScene.h"
-#ifdef _WIN32
-#else  
-    #include <sys/select.h>
-    #include <unistd.h>
-#endif
 
 static void finish(int sig);
 void handleResize(int _);
@@ -27,7 +31,11 @@ void handleResize(int _);
 
 int main() {
     signal(SIGINT, finish); 
-    #ifndef _WIN32
+    #ifdef _WIN32
+        HANDLE stdInHandle = GetStdHandle(STD_INPUT_HANDLE);
+        WSAEVENT sockEvent = WSACreateEvent();
+        HANDLE handles[2] = {stdInHandle, sockEvent};
+    #else
         signal(SIGWINCH, resize);
     #endif
     initializeConnectScene();
@@ -42,23 +50,37 @@ int main() {
     
     rerender();
     while (true) {
-        fd_set fds;
-        FD_ZERO(&fds);
-        int maxfd = STDIN_FILENO + 1;
-        if (connected) {
-            maxfd = (sock > STDIN_FILENO ? sock : STDIN_FILENO) + 1;
-            FD_SET(sock, &fds);
-        }
-        FD_SET(STDIN_FILENO, &fds);
-        struct timeval tv = {.tv_sec = 0, .tv_usec = 100000};
-        select(maxfd, &fds, NULL, NULL, &tv);
-        if (FD_ISSET(STDIN_FILENO, &fds)) {
-            checkKeystrokes();
-        }
-        if (FD_ISSET(sock, &fds)) {
-            receivePartialMessage();
-            rerender();
-        }
+        #ifdef _WIN32
+            if (connected) {
+                WSAEventSelect(sock, sockEvent, FD_READ | FD_CLOSE);
+            }
+            DWORD ready = WaitForMultipleObjects(connected ? 2 : 1, handles, FALSE, 100);
+            if (ready == WAIT_OBJECT_0) {
+                // stdin
+                checkKeystrokes();
+            } else if (ready == WAIT_OBJECT_0+1) {
+                receivePartialMessage();
+                rerender();
+            }
+        #else
+            fd_set fds;
+            FD_ZERO(&fds);
+            int maxfd = STDIN_FILENO + 1;
+            if (connected) {
+                maxfd = (sock > STDIN_FILENO ? sock : STDIN_FILENO) + 1;
+                FD_SET(sock, &fds);
+            }
+            FD_SET(STDIN_FILENO, &fds);
+            struct timeval tv = {.tv_sec = 0, .tv_usec = 100000};
+            select(maxfd, &fds, NULL, NULL, &tv);
+            if (FD_ISSET(STDIN_FILENO, &fds)) {
+                checkKeystrokes();
+            }
+            if (FD_ISSET(sock, &fds)) {
+                receivePartialMessage();
+                rerender();
+            }
+        #endif
     }
 
     // finish(0);

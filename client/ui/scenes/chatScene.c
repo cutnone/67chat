@@ -144,6 +144,7 @@ void initializeChatScene() {
     messagesContainer->component.anchor.size.relY = 1.0;
 
     chatScene = newGroup();
+    chatScene->yPad = 1;
     chatScene->constraint = GROUP_VBOX;
     chatScene->component.receiveInput = chatSceneReceiveInput;
     baseRenderChatScene = chatScene->component.render;

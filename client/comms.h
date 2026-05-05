@@ -1,4 +1,7 @@
 #pragma once
+#ifdef _WIN32
+    #include <winsock2.h>
+#endif
 #include <string.h>
 #include <stdbool.h>
 #include "../common/datastructures/arrayList.h"

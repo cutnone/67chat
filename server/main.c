@@ -182,7 +182,7 @@ void handle_name(int i, char *name){
     if (!c) return;
 
     if(c->state == STATE_CHANNEL){
-        send_to_client(c->fd, "[SERVER] Leave the channel before trying to change your name!\n");
+        send_to_client(c->fd, "[SERVER] Leave the channel before trying to change your name!");
         return;
     }
     name[strcspn(name, "\r\n")] = 0; //trim at newline/end
@@ -201,18 +201,18 @@ void handle_join(int i, char *channel){
     Client *c = (Client *)alGet(clients, i);
     if (!c) return;
     if (c->state == STATE_CHANNEL){
-        send_to_client(c->fd, "[SERVER] You're already in a channel!\n");
+        send_to_client(c->fd, "[SERVER] You're already in a channel!");
         return;
     }
     channel[strcspn(channel, "\r\n")] = 0;
     if (!validate_channel(channel)) {
-        send_to_client(c->fd, "[SERVER] Invalid channel name!\n");
+        send_to_client(c->fd, "[SERVER] Invalid channel name!");
         return;
     }
     int idx = find_channel(channel);
     if (idx == -1){
         idx = add_channel(channel, 0); // auto-create if doesn't exist
-        send_to_client(c->fd, "[SERVER] Created new channel!\n");
+        send_to_client(c->fd, "[SERVER] Created new channel!");
     }
     c->state = STATE_CHANNEL;
     c->channel_index = idx;
@@ -223,7 +223,7 @@ void handle_leave(int i){
     if (!c) return;
 
     if (c->state != STATE_CHANNEL){
-        send_to_client(c->fd, "[SERVER] You can't leave a channel if you're not in a channel!\n");
+        send_to_client(c->fd, "[SERVER] You can't leave a channel if you're not in a channel!");
         return;
     }
     
@@ -253,7 +253,7 @@ void handle_chat(int i, char *msg){
     if (!c) return;
 
     if (c->state != STATE_CHANNEL){
-        send_to_client(c->fd, "[SERVER] In order to chat, you must join a channel first!\n");
+        send_to_client(c->fd, "[SERVER] In order to chat, you must join a channel first!");
         return;
     }
     if (!validate_message(msg)) {
