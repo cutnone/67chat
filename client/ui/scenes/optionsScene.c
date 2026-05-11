@@ -19,7 +19,7 @@
     #define sleepMs(ms) usleep((ms) * 1000)
 #endif
 
-
+// ui components
 Group *optionsScene;
 TextComponent *opt_returnText;
 TextComponent *opt_changeChannelText;
@@ -51,6 +51,8 @@ void optionsReceiveInput(Component *component, int c) {
 }
 
 void initializeOptionsScene() {
+    // set up ui components necessary for the options scene
+
     optionsScene = newGroup();
     optionsScene->component.receiveInput = optionsReceiveInput;
     optionsScene->component.anchor.size.xType = VEC_RELATIVE;

@@ -19,6 +19,13 @@
 Component *screenComponent = NULL;
 
 void init() {
+    /*
+        Much boilerplate code for ncurses has been borrowed 
+        from an online tutorial:
+        https://github.com/enthought/ncurses-5.5/blob/master/doc/ncurses-intro.doc
+    */
+
+    // curses initialization
     initscr();
     keypad(stdscr, TRUE);
     cbreak();
@@ -32,27 +39,26 @@ void init() {
     if (has_colors()) {
         start_color();
         
-        /*
-        * Simple color assignment, often all we need.  Color pair 0 cannot
-        * be redefined.  This example uses the same value for the color
-        * pair as for the foreground color, though of course that is not
-        * necessary:
-        */
-       init_color(8, 200, 200, 200);
-       init_color(9, 800, 800, 800);
-       init_color(10, 100, 100, 100);
-       init_pair(1, COLOR_WHITE, 8);
-       init_pair(2, COLOR_BLACK, 9);
-       init_pair(3, COLOR_WHITE, 10);
-       init_pair(4, COLOR_BLACK, COLOR_BLUE);
-       init_pair(5, COLOR_BLACK, COLOR_CYAN);
-       init_pair(6, COLOR_BLACK, COLOR_MAGENTA);
-       init_pair(7, COLOR_BLACK, COLOR_WHITE);
+        init_color(8, 200, 200, 200);
+        init_color(9, 800, 800, 800);
+        init_color(10, 100, 100, 100);
+        init_pair(1, COLOR_WHITE, 8);
+        init_pair(2, COLOR_BLACK, 9);
+        init_pair(3, COLOR_WHITE, 10);
+        init_pair(4, COLOR_BLACK, COLOR_BLUE);
+        init_pair(5, COLOR_BLACK, COLOR_CYAN);
+        init_pair(6, COLOR_BLACK, COLOR_MAGENTA);
+        init_pair(7, COLOR_BLACK, COLOR_WHITE);
     }
     
 }
 
 void rerender() {
+
+    // scenes are an abstraction. components are the only real ui object.
+    // a scene is really just a group that gets rendered to the whole screen.
+    // so, this function just renders the root component.
+
     erase();
     int maxY = getmaxy(curscr), maxX = getmaxx(curscr);
     
@@ -80,13 +86,8 @@ void rerender() {
 }
 
 void resize() {
-    // these lines are from claude
+    // this #ifdef snipped from claude
     #ifdef _WIN32
-        // CONSOLE_SCREEN_BUFFER_INFO csbi;
-        // GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
-        // int cols = csbi.srWindow.Right - csbi.srWindow.Left + 1;
-        // int rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
-        // resize_term(rows, cols);
         resize_term(0, 0);
     #else
         struct winsize ws;
@@ -94,7 +95,6 @@ void resize() {
         resizeterm(ws.ws_row, ws.ws_col);
     #endif
     alResizeList(messageCache, getmaxy(curscr));
-    // endwin();
     refresh();
     rerender();
 }

@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+// ui components
 Group *chatScene;
 Group *chatHeader;
 Group *chatFooter;
@@ -18,6 +19,7 @@ TextComponent *chatChannelText;
 TextComponent *chatOptionsText;
 Group *messagesContainer;
 LineEditComponent *chatMessageBox;
+
 TextRenderInstruction headerColorInstruction = {
     .type = TR_FORMAT,
     .attrs = COLOR_PAIR(3),
@@ -30,6 +32,7 @@ void chatSceneReceiveInput(Component *component, int c) {
             break; 
         case '\r':
         case '\n':
+            // send message
             if (chatMessageBox->value->length == 0) break;
             sendChatMessage(chatMessageBox->value->data);
             sbClear(chatMessageBox->value);
@@ -42,6 +45,7 @@ void chatSceneReceiveInput(Component *component, int c) {
 }
 
 void updateChatHeader() {
+    // updates the header to reflect the current channel and username
     alClear(chatUsernameText->instructions);
     alAppend(chatUsernameText->instructions, &headerColorInstruction);
     alConcatAndFree(chatUsernameText->instructions, stringToInstructions(username));
@@ -52,8 +56,6 @@ void updateChatHeader() {
 
 BoundingBox *(*baseRenderChatScene)(struct Component *, BoundingBox *);
 BoundingBox *renderChatScene(Component *component, BoundingBox *box) {
-    // regenerate big long string
-    // return;
     for (int i = 0; i < messagesContainer->components->length; i++) {
         TextComponent *textComp = *((TextComponent **) alGet(messagesContainer->components, i));
         alResizeList(textComp->instructions, 0);
@@ -61,6 +63,8 @@ BoundingBox *renderChatScene(Component *component, BoundingBox *box) {
     }
     alResizeList(messagesContainer->components, 0);
     for (int i = messageCache->length-1; i >= 0; i--) {
+        // renders each message as its own text component
+        // they are then stacked by the group's auto-layout functionality
         char *text = *((char **) alGet(messageCache, i));
         TextComponent *message = newTextComponent();
         message->direction = TRD_BOTTOM_LEFT;
@@ -71,15 +75,11 @@ BoundingBox *renderChatScene(Component *component, BoundingBox *box) {
         alConcatAndFree(message->instructions, stringToInstructions(text));
         alAppend(messagesContainer->components, &message);
     }
-    // sbAppend(sb, "\n\n\n", 3);
-    // alResizeList(messages->instructions, 0);
-    // alConcatAndFree(messages->instructions, stringToInstructions(sb->data));
-    // alConcatAndFree(messages->instructions, stringToInstructions("your mom fucked your dad\n\n\n"));
     return baseRenderChatScene(component, box);
 }
 
 void initializeChatScene() {
-    
+    // set up ui components necessary for the chat scene
 
     chatHeader = newGroup();
     chatHeader->component.anchor.size.xType = VEC_RELATIVE;

@@ -17,7 +17,7 @@
     #define sleepMs(ms) usleep((ms) * 1000)
 #endif
 
-
+// ui components
 Group *chooseChannelScene;
 TextComponent *ccStatusText;
 LineEditComponent *ccTextInput;
@@ -59,6 +59,8 @@ void chooseChannelReceiveInput(Component *component, int c) {
 }
 
 void initializeChooseChannel() {
+    // set up ui components necessary for the choose channel scene
+
     chooseChannelScene = newGroup();
     chooseChannelScene->component.receiveInput = chooseChannelReceiveInput;
     chooseChannelScene->component.anchor.size.xType = VEC_RELATIVE;
@@ -94,6 +96,7 @@ void initializeChooseChannel() {
 }
 
 void resetChooseChannel() {
+    // clears the text input for changing the channel
     ccStatusText->instructions = stringToInstructions("Enter a channel <= 16 characters (A-z, 0-9, \\_). Press ENTER to continue.");
     sbClear(ccTextInput->value);
     ccTextInput->cursor = 0;

@@ -13,7 +13,6 @@
 #include "interface.h"
 #include "comms.h"
 #include "ui/scenes/connect.h"
-#include "ui/scenes/testScene.h"
 #include "ui/scenes/chooseUsername.h"
 #include "ui/scenes/chatScene.h"
 #include "ui/scenes/chooseChannel.h"
@@ -23,14 +22,9 @@
 static void finish(int sig);
 void handleResize(int _);
 
-/*
-    Much boilerplate code for ncurses has been borrowed 
-    from an online tutorial:
-    https://github.com/enthought/ncurses-5.5/blob/master/doc/ncurses-intro.doc
-*/
-
 int main(int argc, char *argv[]) {
 
+    // use local server if specified, otherwise use the cloud server
     if (argc >= 2 && strcmp(argv[1], "-local") == 0) {
         serverAddress = "127.0.0.1";
     }
@@ -43,17 +37,21 @@ int main(int argc, char *argv[]) {
     #else
         signal(SIGWINCH, resize);
     #endif
+
+    // initialize all the scenes!
     initializeConnectScene();
-    initializeTestScene();
     initializeChooseUsername();
     initializeChooseChannel();
     initializeChatScene();
     initializeResizeScene();
     initializeOptionsScene();
+
+    // initialize UI
     screenComponent = (Component *) connectScene;
     init();
-    
     rerender();
+
+    // network/input loop
     while (true) {
         #ifdef _WIN32
             if (connected) {
@@ -88,7 +86,6 @@ int main(int argc, char *argv[]) {
         #endif
     }
 
-    // finish(0);
 }
 
 static void finish(int sig) {

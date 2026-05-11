@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <curses.h>
 
+// this file includes definitions and helpers for vectors and bounding boxes
+
 typedef struct {
     int x;
     int y;
@@ -19,6 +21,9 @@ typedef enum {
     VEC_ABSOLUTE,
     VEC_RELATIVE,
 } Vec2Type;
+
+// a generic vector can have different datatypes for each of its components.
+// it's useful for when a component has a fixed height but a relative width, for example.
 typedef struct {
     Vec2Type xType;
     Vec2Type yType;
@@ -64,6 +69,7 @@ typedef struct {
     bool clip;
 } BoundingBox;
 
+// passes absolute components through, but scales relative componends based on the base vector.
 IntVec2 *applyGenericVec2(IntVec2 *base, GenericVec2 *vec) {
     IntVec2 *final = malloc(sizeof(IntVec2));
     switch (vec->xType) {
@@ -77,20 +83,17 @@ IntVec2 *applyGenericVec2(IntVec2 *base, GenericVec2 *vec) {
     switch (vec->yType) {
         case VEC_ABSOLUTE:
             final->y = vec->absY;
-            FILE *log = fopen("debug.log", "a");
-            fprintf(log, "applyingB %d %d %d\n", base->y, vec->absY, final->y);
-            fclose(log);
             break;
         case VEC_RELATIVE:
             final->y = round(((float) base->y) * vec->relY);
             break;
     }
-    FILE *log = fopen("debug.log", "a");
-    fprintf(log, "applying %d %d %d %d\n", base->x, base->y, final->x, final->y);
-    fclose(log);
     return final;
 }
 
+// applies an anchor's transform to an outer bounding box.
+// this returns a bounding box representing where on the screen the component
+// which 'anchor' belongs to is allowed to be drawn.
 BoundingBox *generateChildBoundingBox(BoundingBox *outerBox, Anchor *anchor) {
     BoundingBox *finalBox = malloc(sizeof(BoundingBox));
     finalBox->clip = true;

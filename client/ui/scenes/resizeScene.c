@@ -8,11 +8,13 @@
 const int MIN_WIDTH = 50;
 const int MIN_HEIGHT = 20;
 
+// ui components
 TextComponent *resizeText;
 Group *resizeScene;
 BoundingBox *(*groupRenderer)(Component *, BoundingBox *);
 
 BoundingBox *renderHook(Component *component, BoundingBox *bbox) {
+    // make sure to show the correct text based on the dimension(s) in which the terminal is too small
     int maxY = getmaxy(curscr), maxX = getmaxx(curscr);
     TextRenderInstruction instr = {
         .type = TR_WORD,
@@ -28,6 +30,8 @@ BoundingBox *renderHook(Component *component, BoundingBox *bbox) {
 }
 
 void initializeResizeScene() {
+    // set up ui components necessary for the resize scene
+
     resizeScene = newGroup();
     resizeScene->component.anchor.size.xType = VEC_RELATIVE;
     resizeScene->component.anchor.size.yType = VEC_RELATIVE;

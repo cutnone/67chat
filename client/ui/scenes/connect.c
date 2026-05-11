@@ -15,7 +15,7 @@
     #define sleepMs(ms) usleep((ms) * 1000)
 #endif
 
-
+// ui components
 Group *connectScene;
 TextComponent *text;
 
@@ -42,6 +42,8 @@ void connectSceneReceiveInput(Component *component, int c) {
 }
 
 void initializeConnectScene() {
+    // set up ui components necessary for the connect scene
+
     connectScene = newGroup();
     text = newTextComponent();
     connectScene->component.receiveInput = connectSceneReceiveInput;

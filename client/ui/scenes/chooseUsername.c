@@ -18,7 +18,7 @@
     #define sleepMs(ms) usleep((ms) * 1000)
 #endif
 
-
+// ui components
 Group *chooseUsernameScene;
 TextComponent *statusText;
 LineEditComponent *textInput;
@@ -67,6 +67,8 @@ void chooseUsernameReceiveInput(Component *component, int c) {
 }
 
 void initializeChooseUsername() {
+    // set up ui components necessary for the choose username scene
+
     chooseUsernameScene = newGroup();
     chooseUsernameScene->component.receiveInput = chooseUsernameReceiveInput;
     chooseUsernameScene->component.anchor.size.xType = VEC_RELATIVE;
@@ -102,6 +104,7 @@ void initializeChooseUsername() {
 }
 
 void resetChooseUsername() {
+    // clears the text input for changing the username
     statusText->instructions = stringToInstructions("Enter a username <= 16 characters (A-z, 0-9, \\_). Press ENTER to continue.");
     sbClear(textInput->value);
     textInput->cursor = 0;
