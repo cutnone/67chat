@@ -40,18 +40,18 @@ BoundingBox *renderGroup(Component *component, BoundingBox *box) {
         group->background->component.render((Component *) group->background, box);
     }
     
-    // apply margin
+    // shrink the bounding box based on the margin
     box->topLeft.y += group->topMargin;
     box->size.y -= group->topMargin + group->bottomMargin;
     box->topLeft.x += group->leftMargin;
     box->size.x -= group->leftMargin + group->rightMargin;
     
+    // render each component
     for (int i = 0; i < group->components->length; i++) {
         Component *innerComp = * (Component **)alGet(group->components, i);
         BoundingBox *innerBox = generateChildBoundingBox(box, &innerComp->anchor);
         int innerWidth = innerBox->size.x;
         int innerHeight = innerBox->size.y;
-        // return;
         innerBox = innerComp->render(innerComp, innerBox);
         
         // bitmask trick i learned but never had a reason to use
@@ -109,6 +109,7 @@ BoundingBox *renderGroup(Component *component, BoundingBox *box) {
     
 }
 
+// pass input through to child components
 void groupReceiveInput(Component * component, int key) {
     Group *group = (Group*) component;
     for (int i = 0; i < group->components->length; i++) {

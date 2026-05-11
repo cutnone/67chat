@@ -18,9 +18,6 @@ typedef struct {
 // is safe.
 BoundingBox *renderRect(Component *component, BoundingBox *bbox) {
     RectangleComponent *rect = (RectangleComponent*) component;
-    // char txt[20];
-    // sprintf(txt, "p %d %d", bbox->topLeft.x, bbox->topLeft.y);
-    // mvaddstr(0, 0, txt);
     
     attrset(COLOR_PAIR(rect->color));
     for (int x = 0; x < bbox->size.x; x++) {

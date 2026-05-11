@@ -97,7 +97,7 @@ void lineEditReceiveInput(Component *component, int c) {
     LineEditComponent *le = (LineEditComponent*) component;
     switch (c) {
         case '\b':
-        case 127: // macos backspace
+        case 127: // macos (and unix in general?) backspace
         case KEY_DC:
         case KEY_BACKSPACE:
             if (le->cursor > 0) {

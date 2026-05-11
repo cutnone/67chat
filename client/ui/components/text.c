@@ -202,6 +202,8 @@ void clearText(TextComponent *c) {
     alClear(c->instructions);
 }
 
+// generates a string of text rendering instructions including words, spaces, line breaks, and formatting
+// from a source string
 ArrayList *stringToInstructions(char *string) {
     ArrayList *list = newArrayList(sizeof(TextRenderInstruction));
     StringBuilder *wordBuffer = newStringBuilder();
