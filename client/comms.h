@@ -36,6 +36,7 @@ extern const int MAX_USERNAME_LENGTH;
 extern const int MIN_USERNAME_LENGTH;
 bool characterAllowedInUsername(char testChar);
 
+extern char* serverAddress;
 extern bool connected;
 extern char *username;
 extern char *activeChannel;

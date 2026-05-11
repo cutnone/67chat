@@ -60,6 +60,7 @@ typedef enum {
     CJOIN_FAILED,
 } ChannelJoinResponseType;
 
+char* serverAddress = "167.71.176.13";
 const int MAX_USERNAME_LENGTH = 16;
 const int MIN_USERNAME_LENGTH = 3;
 const int MIN_CHANNEL_LENGTH = 3;
@@ -140,7 +141,7 @@ ConnectionStatusType connectToServer(){
     struct sockaddr_in server_addr; //simialr stuff as the server here
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(PORT); //make sure server port matches client port lol (6767)
-    inet_pton(AF_INET, "167.71.176.13", &server_addr.sin_addr); //assuming a local connection atm
+    inet_pton(AF_INET, serverAddress, &server_addr.sin_addr); //assuming a local connection atm
 
     if (connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
         close(sock); //there's a problem if connect returns negative
@@ -228,25 +229,30 @@ void sendChatMessage(char *msg) {
 
 void receivePartialMessage() {
     char buf[BUFFER_SIZE];
-    int n = recv(sock, buf, BUFFER_SIZE, 0);
-    if (n <= 0) return;
-    while (true) {
-        int msgLen = strnlen(buf, n); 
-        sbAppend(messageBuilder, buf, msgLen);
+    int nRead = recv(sock, buf, BUFFER_SIZE, 0);
+    if (nRead == 0) {
+        endwin();
+        #ifdef _WIN32
+            WSACleanup();
+        #endif
+        printf("Connection closed. Process exited.");
+        exit(0);
+    } else if (nRead < 0) return;
 
-        if (msgLen < n-1 || (msgLen == n-1 && buf[n-1] == '\0')) {
-            // completed message present
+    int nLeft = nRead;
+    while (nLeft > 0) {
+        int msgLen = strnlen(buf, nLeft); 
+        sbAppend(messageBuilder, buf, msgLen);
+        if (msgLen < nLeft) {
+            // segment is end of message
             char *duped = strdup(messageBuilder->data);
             alAppend(messageCache, &duped);
             sbClear(messageBuilder);
-            if (msgLen < n-1) {
-                // save partial message
-                n -= msgLen+1;
-                // strncpy wouldn't work, so claude said to use this
-                memmove(buf, buf+msgLen+1, n);
-                // strncpy(buf, buf+msgLen+1, n-msgLen-1);
-                continue;
-            } else break;
-        } else break;
+            nLeft -= msgLen+1;
+            memmove(buf, buf+msgLen+1, nLeft);
+        } else {
+            // segment is partial packet
+            break;
+        }
     }
 }

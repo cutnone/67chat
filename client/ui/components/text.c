@@ -114,6 +114,7 @@ BoundingBox *renderText(Component *component, BoundingBox *bbox) {
         if (newLine == 2) newLine = 0;
         if (newLine == 1) newLine = 2;
     }
+    attroff(A_ITALIC | A_BOLD | A_UNDERLINE);
     // bank the last line
     alAppend(lineLengths, &x);
     x = 0;
@@ -248,7 +249,7 @@ ArrayList *stringToInstructions(char *string) {
                 isFormat = true;
                 tempFormat = A_ITALIC;
                 break;
-            case '_':
+            case '~':
                 isFormat = true;
                 tempFormat = A_UNDERLINE;
                 break;

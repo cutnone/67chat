@@ -102,6 +102,7 @@ BoundingBox *renderGroup(Component *component, BoundingBox *box) {
                 }
             }
         }
+        attrset(A_NORMAL); // clear formatting
     }
 
     return box;

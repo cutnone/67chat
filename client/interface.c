@@ -72,6 +72,7 @@ void rerender() {
         .clip = true,
     };
     if (renderThis != NULL) {
+        attrset(A_NORMAL); // clear formatting
         BoundingBox *applied = generateChildBoundingBox(&screenBox, &renderThis->anchor);
         renderThis->render(renderThis, applied);
     }

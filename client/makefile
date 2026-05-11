@@ -11,7 +11,7 @@ ifeq ($(OS), Windows_NT)
     LIBDIRS = -L C:/ProgramData/mingw64/mingw64/lib
     EXT = .exe
 else
-	LIBS = -lncurses
+	LIBS = -lncurses -lm
 	EXT = .out
 endif
 

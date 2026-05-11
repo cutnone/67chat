@@ -142,6 +142,10 @@ void initializeChatScene() {
     messagesContainer->component.anchor.size.yType = VEC_RELATIVE;
     messagesContainer->component.anchor.size.relX = 1.0;
     messagesContainer->component.anchor.size.relY = 1.0;
+    messagesContainer->topMargin = 1;
+    messagesContainer->bottomMargin = 1;
+    messagesContainer->leftMargin = 1;
+    messagesContainer->rightMargin = 1;
 
     chatScene = newGroup();
     chatScene->yPad = 1;

@@ -29,7 +29,12 @@ void handleResize(int _);
     https://github.com/enthought/ncurses-5.5/blob/master/doc/ncurses-intro.doc
 */
 
-int main() {
+int main(int argc, char *argv[]) {
+
+    if (argc >= 2 && strcmp(argv[1], "-local") == 0) {
+        serverAddress = "127.0.0.1";
+    }
+
     signal(SIGINT, finish); 
     #ifdef _WIN32
         HANDLE stdInHandle = GetStdHandle(STD_INPUT_HANDLE);
