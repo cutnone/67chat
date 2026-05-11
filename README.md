@@ -22,3 +22,11 @@ The client will exit when the connection is closed.
 The interface is fully responsive (to a point; you will know when it's too small). Components will resize/reposition and text will wrap to accommodate most terminal sizes.
 
 ## Building From Source on WSL
+### Server
+`cd` into the `server` directory and run `make`.
+The output file will be `main.out`.
+### Client
+`cd` into the `client` directory.
+Make sure you have ncurses installed. If you don't, you can install it with `sudo apt-get install libncurses5-dev`.
+Run `make`.
+The output file will be `client.out`.
