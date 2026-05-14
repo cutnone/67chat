@@ -2,6 +2,8 @@
 
 67Chat is a chat server and client which runs entirely in the terminal. It's complete with username selection, multiple channels, and text formatting.
 
+It's cross-platform, so users on Windows, MacOS, and Linux can all chat together.
+
 ## Usage
 By default, the client will try to connect to the cloud-based server. If the server is offline, or you would rather connect to a locally hosted instance, run the client with the `-local` flag.
 
